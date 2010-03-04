@@ -1,0 +1,187 @@
+<?php
+/**
+ * HessianPHP 2 Copyright 2009 Manuel Gómez
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at 
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0 
+ * 
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ * limitations under the License. 
+ */
+
+include_once 'HessianInterfaces.php';
+include_once 'HessianExceptions.php';
+include_once 'HessianParsing.php';
+include_once 'HessianOptions.php';
+include_once 'HessianUtils.php';
+include_once 'HessianCustomTypeHandler.php';
+include_once 'HessianReferenceMap.php';
+include_once 'HessianTypeMap.php';
+include_once 'HessianStream.php';
+include_once 'HessianDatetimeAdapter.php';
+
+define('HESSIAN_PHP_VERSION', '2.0');
+
+/**
+ * Default implementation of an object factory 
+ */
+class HessianObjectFactory implements IHessianObjectFactory{
+	public function getObject($type){
+		return new $type();
+	}
+}
+
+/**
+ * Handles que creation of components for assembling Hessian clients and servers
+ * It contains the basic assembly configuration for these components.
+ * @author vsayajin
+ *
+ */
+class HessianFactory{
+	var $protocols = array();
+	var $transports = array();
+	static $cacheRules = array();
+	
+	function getParser($stream, $options){
+		$version = $options->version;
+		if($options->detectVersion)
+			$version = $this->detectVersion($stream);
+		$config = $this->getConfig($version);
+		$class = $config['parser']; 
+		$inc = $config['folder'].'/'. $class .'.php';	
+		include_once $inc;
+		$resolver = $this->getRulesResolver($version, $config);
+		$parser = new $class($resolver, $stream);
+		$parser->dateAdapter = $this->getComponent('HessianDatetimeAdapter', $options->dateAdapter);
+		$parser->setCustomHandlers($options->customParsers);
+		$parser->objectFactory = $this->getComponent('HessianObjectFactory', $options->objectFactory);
+		return $parser;
+	}
+	
+	function getWriter($stream, $options){
+		$version = $options->version;
+		if($options->detectVersion)
+			$version = $this->detectVersion($stream);
+		$config = $this->getConfig($version);
+		$class = $config['writer']; 
+		$inc = $config['folder'].'/'. $class .'.php';	
+		include_once $inc;
+		$writer = new $class();
+		$writer->dateAdapter = $this->getComponent('HessianDatetimeAdapter', $options->dateAdapter);
+		$handlers = array_merge($config['customWriters'], 
+				$options->customWriters);
+		$writer->setCustomHandlers($handlers);
+		return $writer;
+	}
+	
+	function getComponent($default, $definition = null){
+		$objdef = $default;
+		if($definition)
+			$objdef = $definition;
+		if(is_object($objdef))
+			return $objdef;	
+		if(is_string($objdef)){
+			if(!class_exists($objdef))
+				include_once($objdef.'.php');
+			return new $objdef();
+		}
+	}
+		
+	public function getRulesResolver($version, $config = null){
+		if(isset(self::$cacheRules[$version]))
+			return self::$cacheRules[$version];
+		if(!$config)
+			$config = $this->getConfig(version);
+		$rulesPath = $config['folder'].'/'.$config['parsingRules'];
+		$resolver = new HessianRuleResolver();
+		$resolver->loadRulesFromFile($rulesPath);
+		self::$cacheRules[$version] = $resolver;
+		return $resolver;
+	}
+	
+	/**
+	 * Receives a stream and iterates over que registered protocol handlers
+	 * in order to detect which version of Hessian is it
+	 * @param HessianStream $stream
+	 * @return integer Protocol version detected
+	 */
+	function detectVersion($stream){
+		foreach($this->protocols as $version => $config){
+			$callback = $config['detectVersion'];
+			$res = $this->$callback($stream);
+			if($res)
+				return $version;		
+		}
+		throw new Exception("Cannot detect protocol version on stream");
+	}
+	
+	function getConfig($version){
+		if(!isset($this->protocols[$version]))
+			throw new Exception("No configuration for version $version protocol");
+		return $this->protocols[$version];
+	}
+	
+	function getTransport(HessianOptions $options){
+		$type = $options->transport;
+		if(is_object($type))
+			return $type;
+		if(!isset($this->transports[$type]))
+			throw new HessianException("The transport of type $type cannot be found");
+		$class = $this->transports[$type];
+		$trans = $this->getComponent($class);
+		$trans->testAvailable();
+		return $trans; 
+	}
+	
+	function __construct(){
+		$this->protocols = array(
+			'2'=>array(
+				'folder' => 'Hessian2',
+				'parsingRules' => 'hessian2rules.php',
+				'parser' => 'Hessian2ServiceParser',
+				'writer' => 'Hessian2ServiceWriter',
+				'detectVersion' => 'detectHessian2',
+				'customWriters' => array('Iterator' => 'Hessian2IteratorWriter')
+			),	
+			'1' => array(
+				'folder' => 'Hessian1',
+				'parsingRules' => 'hessian1rules.php',
+				'parser' => 'Hessian1ServiceParser',
+				'writer' => 'Hessian1ServiceWriter',
+				'detectVersion' => 'detectHessian1',
+				'customWriters' => array('Iterator' => 'Hessian1IteratorWriter')
+			)
+			
+		);
+		$this->transports = array(
+			'CURL' => 'HessianCURLTransport',
+			'http' => 'HessianHttpStreamTransport'
+		);
+	}
+	
+	// custom version detection functions
+	
+	function detectHessian2($stream){
+		$version = $stream->peek(3, 0);
+		return $version == "H\x02\x00";
+	}
+	
+	function detectHessian1($stream){
+		$head = $stream->peek(1, 0);
+		if($head == 'f')
+			return true;
+		$head = $stream->peek(3, 0);
+		return $head == "c\x01\x00" || $head == "r\x01\x00";
+	}
+	
+}
+
+
+
+

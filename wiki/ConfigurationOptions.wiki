@@ -13,7 +13,7 @@ and set its properties like this:
 {{{
 $options = new HessianOptions();
 $options->version = 1;
-$options->interceptors = array($int);
+$options->detectVersion = false;
 $options->typeMap = array('ParamObjectJava' => 'ParamObject');
 }}}
 

@@ -6,59 +6,59 @@ Most configuration options can be set using the standard HessianOptions class or
 
 = Details =
 
+In order to configure hessian clients or servers you can create a HessianOptions object
+and set its properties like this:
+
+{{{
+$options = new HessianOptions();
+$options->version = 1;
+$options->interceptors = array($int);
+$options->typeMap = array('ParamObjectJava' => 'ParamObject');
+}}}
+
+Then pass it to the constructor of either server or client:
+
+{{{
+$client = new HessianClient('http://localhost/remoteService', $options);
+}}}
+
+*Using arrays*
+
+If you preffer to use arrays for configuration, you can pass an associative array where
+keys contain the names of the properties, like this:
+
+{{{
+$service = new HessianService($realService, 
+  array('displayInfo' => true, 'ignoreOutput'=>true)
+);
+}}}
+
 == General configuration properties ==
 
-*version* : integer
+Options that affect both client and servers.
 
-Protocol version to use, posible values are 1 and 2. The default value is 2.
-
-*detectVersion* : boolean
-
-Defines if the library should try to detect protocl version based on incoming data.
-Default is false.
-
-*typeMap* : array
-
-Associative array defining mappings between local and remote types (classes)
-
-*interceptors* : array
-Array of interceptor objects that implement the IHessianInterceptor interface
-that will be executed in every request.
-
-*dateAdapter : object*
-Default : Default native DateTime handler
-Sets an alternative object to handle date/time serialization and deserialization.
-The objects must implement the IHessianDatetimeAdapter interface to deal with
-UNIX timestamps. Can be used to replace the standard implementation that returns
-and serializes native DateTime objects defined in PHP 5.
-
-*timeZone : string*
-default : detected local time zone
-String defining a timezone for datetime handling, which is required in newer
-versions of PHP.
-
-*saveRaw : boolean*
-Tells the transport library to keep a copy of received bytes in raw form. 
-Usefull for debugging or logging.
-
-*headers : array*
-Array of headers to be included in each request. Not implemented yet.
+|| *Option* || *Description* ||
+|| *version* || Protocol version to use, posible values are 1 and 2. The default value is 2. ||
+|| *detectVersion* || Boollean, Defines if the library should try to detect protocl version based on incoming data. Default is false. ||
+|| *typeMap* || Associative array defining mappings between local and remote types (classes) ||
+|| *interceptors* || Array of interceptor objects that implement the IHessianInterceptor interface that will be executed in every request.||
+|| *dateAdapter* || Object. Sets an alternative object to handle date/time serialization and deserialization. The objects must implement the IHessianDatetimeAdapter interface to deal with UNIX timestamps. Can be used to replace the standard implementation that returns and serializes native DateTime objects defined in PHP 5. Defaults to a native DateTime handler. ||
+|| *timeZone* || String. String defining a timezone for datetime handling, which is required in newer versions of PHP. Default detected local time zone ||
+|| *saveRaw* || Boolean. Tells the transport library to keep a copy of received bytes in raw form. Usefull for debugging or logging. ||
+|| *headers* || Array of headers to be included in each request. Not implemented yet. ||
 
 ==Client options==
 
-*transport : string / object*
-Default: CURL
-Defines the http communication library that clients use to send requests to remote
-services. Available options are 'CURL' and 'http'. 'CURL' uses the CURL extension 
-to send POST requests which can be faster and better suited for secure communication.
-'http' uses standard PHP http stream wrappers (stream_context_create and fopen) to
-send the request.
-Optionally, you can pass an object that implements IHessianTransport using another
-library or method.
+|| *transport* || String/object. Defines the http communication library that clients use to send requests to remote services. Available options are 'CURL' and 'http'. See description below. ||
+|| *transportOptions* || Mixed. Transport specific options to configure the request. ||
 
-*transportOptions : mixed*
-Transport specific options to configure the request. In the current provided implementations,
-the options are:
+*Transport options*
+
+  * *'CURL'* (Default) uses the CURL extension to send POST requests which can be faster and better suited for secure communication. 
+  * *'http'* uses standard PHP http stream wrappers (stream_context_create and fopen) to send the request.
+
+Optionally, you can pass an object that implements IHessianTransport using another
+library or method. Transport specific options to configure the request. In the current provided implementations, the options are:
 
   # CURL: array of options to be passed to the curl_setopt_array() function
   # http: array to be merged with the options used in the stream_context_create() function.
@@ -66,38 +66,15 @@ the options are:
 
 ==Server options==
 
-*serviceName : string*
-default: class name of the serviced object
-Published name of service
-
-*displayInfo : boolean*
-default: false
-When set true, the service will display an information page with the name of
-the service and available methods upon a browsing to the service PHP page
-(GET request). When false, it will issue an error telling the Hessian requires
-POST.
-
-*ignoreOutput: boolean*
-default : false
-When set to true, the service will ignore all text produced inside
-method calls, for example echo() and print() statements. 
-NOTE: If any of the methods called in the service writes anything to the screen, 
-it will result in a corrupted stream.
+|| *serviceName* || String. Published name of service, the default is the class name of the serviced object ||
+|| *displayInfo || Boolean. Default false. When set true, the service will display an information page with the name of the service and available methods upon a browsing to the service PHP page (GET request). When false, it will issue an error telling the Hessian requires POST. ||
+|| *ignoreOutput* || Boolean. Default false. When set to true, the service will ignore all text produced inside method calls, for example echo() and print() statements. NOTE: If any of the methods called in the service writes anything to the screen, it will result in a corrupted stream. ||
 
 ==Advanced options==
 
 The following options exist for customizing internal behaviour of the library and it should
 be used carefully.
 
-*objectFactory : object*
-Replaces the default object factory with an object that implements the 
-IHessianObjectFactory interface. Can be used to get objects through IoC for example.
-
-*customWriters : array*
-Associative array in which keys are type names and values are implementations
-of IHessianCustomWriter. Used to handle serialization of specific types, for 
-instance, the IteratorWriter that serialized PHP STD iterators as lists or maps.
-
-*customParsers : array*
-Same as the customWriters option, it handles the deserialization of custom types
-received in thr response.
+|| *objectFactory* || Object. Replaces the default object factory with an object that implements the IHessianObjectFactory interface. Can be used to get objects through IoC for example. ||
+|| *customWriters* || Associative array in which keys are type names and values are implementations of IHessianCustomWriter. Used to handle serialization of specific types, for instance, the IteratorWriter that serialized PHP STD iterators as lists or maps. ||
+|| *customParsers* || Same as the customWriters option, it handles the deserialization of custom types received in the response. ||

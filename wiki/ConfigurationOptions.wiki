@@ -55,7 +55,7 @@ Options that affect both client and servers.
 
 *Transport options*
 
-  * *'CURL'* (Default) uses the CURL extension to send POST requests which can be faster and better suited for secure communication. 
+  * *'CURL' (Default)* uses the CURL extension to send POST requests which can be faster and better suited for secure communication. 
   * *'http'* uses standard PHP http stream wrappers (stream_context_create and fopen) to send the request.
 
 Optionally, you can pass an object that implements IHessianTransport using another
@@ -69,8 +69,8 @@ Please consult the PHP Manual for more information about specific options for th
 ==Server options==
 
 || *serviceName* || String. Published name of service, the default is the class name of the serviced object ||
-|| *displayInfo || Boolean. Default false. When set true, the service will display an information page with the name of the service and available methods upon a browsing to the service PHP page (GET request). When false, it will issue an error telling the Hessian requires POST. ||
-|| *ignoreOutput* || Boolean. Default false. When set to true, the service will ignore all text produced inside method calls, for example echo() and print() statements. NOTE: If any of the methods called in the service writes anything to the screen, it will result in a corrupted stream. ||
+|| *displayInfo || Boolean. Default false. When set true, the service will display an information page with the name of the service and available methods upon a browsing to the service PHP page (GET request). When false, it will issue an error telling the Hessian requires POST.||
+|| *ignoreOutput * || Boolean. Default false. When set to true, the service will ignore all text produced inside method calls, for example echo() and print() statements. NOTE: If any of the methods called in the service writes anything to the screen, it will result in a corrupted stream. ||
 
 ==Advanced options==
 

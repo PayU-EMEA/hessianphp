@@ -1,0 +1,9 @@
+#summary Configuring clients and servers
+
+= Introduction =
+
+Most configuration options can be set using the standard HessianOptions class or an associative array, more on this later. Some configuration options affect general behaviour and others are aimed only to clients or servers.
+
+= Details =
+
+TODO: complete

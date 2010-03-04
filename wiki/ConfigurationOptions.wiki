@@ -1,4 +1,5 @@
 #summary Configuring clients and servers
+#labels Phase-Design,configuration,HessianOptions
 
 = Introduction =
 

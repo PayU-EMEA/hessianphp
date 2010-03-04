@@ -1,5 +1,5 @@
 #summary Configuring clients and servers
-#labels Phase-Design,configuration,HessianOptions
+#labels Phase-Design,configuration,Phase-Deploy
 
 = Introduction =
 
@@ -61,9 +61,10 @@ Options that affect both client and servers.
 Optionally, you can pass an object that implements IHessianTransport using another
 library or method. Transport specific options to configure the request. In the current provided implementations, the options are:
 
-  # CURL: array of options to be passed to the curl_setopt_array() function
-  # http: array to be merged with the options used in the stream_context_create() function.
+  * CURL: array of options to be passed to the curl_setopt_array() function
+  * http: array to be merged with the options used in the stream_context_create() function.
 
+Please consult the PHP Manual for more information about specific options for these libraries.
 
 ==Server options==
 

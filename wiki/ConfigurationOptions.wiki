@@ -78,5 +78,5 @@ The following options exist for customizing internal behaviour of the library an
 be used carefully.
 
 || *objectFactory* || Object. Replaces the default object factory with an object that implements the IHessianObjectFactory interface. Can be used to get objects through IoC for example. ||
-|| *customWriters* || Associative array in which keys are type names and values are implementations of IHessianCustomWriter. Used to handle serialization of specific types, for instance, the IteratorWriter that serialized PHP STD iterators as lists or maps. ||
+|| *customWriters* || Associative array in which keys are type names and values are implementations of IHessianCustomWriter. Used to handle serialization of specific types, for instance, the IteratorWriter that serializes PHP STD iterators as lists or maps. ||
 || *customParsers* || Same as the customWriters option, it handles the deserialization of custom types received in the response. ||

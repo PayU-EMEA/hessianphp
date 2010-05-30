@@ -29,8 +29,11 @@ If you preffer to use arrays for configuration, you can pass an associative arra
 keys contain the names of the properties, like this:
 
 {{{
-$service = new HessianService($realService, 
-  array('displayInfo' => true, 'ignoreOutput'=>true)
+$service = new HessianService($wrappedObject, 
+  array(
+   'displayInfo' => true, 
+   'ignoreOutput'=> true
+  )
 );
 }}}
 

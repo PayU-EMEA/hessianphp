@@ -8,6 +8,17 @@
  */
 
 /**
+ * An interface for adapters that will work with UNIX timestamps
+ * and datetime objects
+ * @author vsayajin
+ */
+interface IHessianDatetimeAdapter{
+	function toObject($timestamp, $utc = true);
+	function toTimestamp($dateobj);
+	function isDatetime($object);
+}
+
+/**
  * Defines a contract for object creation used by the decoders
  */
 interface IHessianObjectFactory{

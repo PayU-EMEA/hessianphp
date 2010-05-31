@@ -61,7 +61,10 @@ class HessianCURLTransport implements IHessianTransport{
 			$this->rawData = $result;
 		$this->metadata = curl_getinfo($ch);
 		curl_close($ch);
-		$stream = new HessianStream($result);
+		if(isset($this->metadata['download_content_length']))
+			$stream = new HessianStream($result, $this->metadata['download_content_length']);
+		else
+			$stream = new HessianStream($result);
 		return $stream;
 	}
 
@@ -114,11 +117,15 @@ class HessianHttpStreamTransport implements IHessianTransport{
 			throw new Exception("Problem reading data from $url, $php_errormsg");
 		} 
 		$this->metadata = stream_get_meta_data($fp);
+		$this->metadata['http_headers'] = array();
+		foreach ($this->metadata['wrapper_data'] as $raw_header) {
+			list($header, $data) = explode(':', $raw_header);
+			$this->metadata['http_headers'][strtolower($header)] = trim($data);
+		}
 		fclose($fp);
 		if(!empty($options->saveRaw))
 			$this->rawData = $response;
-		$stream = new HessianStream($response);
+		$stream = new HessianStream($response, $this->metadata['http_headers']['content-length']);
 		return $stream;
 	}
-
 }

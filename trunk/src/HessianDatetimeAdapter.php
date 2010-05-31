@@ -8,17 +8,6 @@
  */
 
 /**
- * An interface for adapters that will work with UNIX timestamps
- * and datetime objects
- * @author vsayajin
- */
-interface IHessianDatetimeAdapter{
-	function toObject($timestamp, $utc = true);
-	function toTimestamp($dateobj);
-	function isDatetime($object);
-}
-
-/**
  * Default Datetime adapter that works with the built-in Datetime class of PHP5
  * @author vsayajin
  */

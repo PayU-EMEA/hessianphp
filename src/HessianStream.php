@@ -17,14 +17,18 @@ class HessianStream{
 	public $last;
 	public $len;
 	
-	function __construct($data = null){
+	function __construct($data = null, $length = null){
 		if($data)
-			$this->setStream($data);
+			$this->setStream($data, $length);
 	}
 	
-	function setStream($data){
+	function setStream($data, $length = null){
 		$this->data = $data;
-		$this->len = strlen($data);
+		if (isset($length)) {
+			$this->len = $length;
+		} else {
+			$this->len = strlen($data);
+		}
 		$this->pos = 0;
 		$this->last = '';
 	}

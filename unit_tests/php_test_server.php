@@ -1,6 +1,6 @@
 <?php
 
-include_once('../API/HessianService.php');
+include_once('../src/HessianService.php');
 
 class ParamObject{
 	var $test = 'Hola hessian';

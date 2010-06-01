@@ -10,10 +10,9 @@
 class HessianBufferedStream{
 	public $fp;
 	public $pos = 0;
-	public $last;
 	public $len = 0;
-	public $data;
 	public $bufferSize = 1024;
+	public $bytes = array();
 	
 	function __construct($fp, $bufferSize = 1024){
 		if(!is_resource($fp))
@@ -22,22 +21,24 @@ class HessianBufferedStream{
 		$this->bufferSize = $bufferSize;
 	}
 	
-	/*function __destruct(){
-		$this->close();
-	}*/
-	
 	function setStream($fp){
 		$this->fp = $fp;
-		$this->data = '';
 		$this->len = 0;
 	}
 	
 	public function peek($count = 1, $pos = null){
 		if($pos == null)
 			$pos = $this->pos;
-		$newpos = $this->pos + $count;
+		
+		$newpos = $pos + $count;
 		$this->checkRead($newpos);
-		return substr($this->data, $pos, $count);
+		$data = '';
+		for($i=0; $i<$count; $i++){
+			if(isset($this->bytes[$pos]))
+				$data .= $this->bytes[$pos];
+			$pos++;
+		}
+		return $data;
 	}
 	
 	public function read($count=1){
@@ -45,20 +46,26 @@ class HessianBufferedStream{
 			return;
 		$newpos = $this->pos + $count;
 		$this->checkRead($newpos);
-		$this->last = $count == 1 ?
-			$this->data[$this->pos] :
-			substr($this->data, $this->pos, $count);
-		$this->pos = $newpos;
-		return $this->last;
+		
+		$data = '';
+		for($i=0;$i<$count;$i++){
+			if(isset($this->bytes[$this->pos]))
+				$data .= $this->bytes[$this->pos];
+			$this->pos++;
+		}
+		return $data;
 	}
 	
 	public function checkRead($newpos){
+		return;
 		if(feof($this->fp) && $newpos > $this->len)
 			throw new Exception('read past end of file: '.$newpos);
 		if($newpos > $this->len){
 			while($this->len < $newpos){
-				$this->data .= fread($this->fp, $this->bufferSize);
-				$this->len = strlen($this->data);
+				$data = fread($this->fp, $this->bufferSize);
+				$bytes = str_split($data);
+				$this->bytes = array_merge($this->bytes, $bytes);
+				$this->len += count($bytes);
 			}
 		}
 	}
@@ -68,18 +75,17 @@ class HessianBufferedStream{
 	}
 	
 	public function write($data){
-		$this->data .= $data;
+		$bytes = str_split($data);
+		$this->bytes = array_merge($this->bytes, $bytes);
 		$len = fwrite($this->fp, $data);
 		$this->len += $len;
 	}
 	
 	public function readAll(){
-		$this->data .= stream_get_contents($this->fp);
-		/*while(!feof($this->fp)){
-			$this->data .= fread($this->fp, $this->bufferSize);
-		}*/
-		$this->len = strlen($this->data);
-		return $this->data;		
+		$data = stream_get_contents($this->fp);
+		$this->bytes = str_split($data);
+		$this->len = count($this->bytes);
+		return $data;		
 	}
 	
 	public function flush(){
@@ -88,7 +94,7 @@ class HessianBufferedStream{
 	}
 	
 	public function getData(){
-		return $this->data;
+		return implode($this->bytes);
 	}
 	
 	public function close(){

@@ -121,8 +121,8 @@ class HessianUtils{
 	 * @return mixed integer or float
 	 */
 	public static function longFromBytes64($bytes){
-		$sec1 = substr($bytes, 0, 4);
-		$sec2 = substr($bytes, 4);
+		$sec1 = $bytes[0].$bytes[1].$bytes[2].$bytes[3]; // primeros 4
+		$sec2 = $bytes[4].$bytes[5].$bytes[6].$bytes[7]; // segundos 4
 		$b1 = unpack('N', $sec1);
 		$b2 = unpack('N', $sec2);
 		$res = $b2[1];
@@ -143,8 +143,8 @@ class HessianUtils{
 	 * @return float
 	 */
 	public static function timestampFromBytes64($bytes){
-		$sec1 = substr($bytes, 0, 4);
-		$sec2 = substr($bytes, 4);
+		$sec1 = $bytes[0].$bytes[1].$bytes[2].$bytes[3]; // primeros 4
+		$sec2 = $bytes[4].$bytes[5].$bytes[6].$bytes[7]; // segundos 4
 		$b1 = unpack('N', $sec1);
 		$b2 = unpack('N', $sec2);
 		$res = $b2[1];
@@ -158,4 +158,34 @@ class HessianUtils{
 		$num = $num / 1000;
 		return $num;
 	}
+	
+	// string functions
+
+	public static function isInternalUTF8(){
+		$encoding = ini_get('mbstring.internal_encoding');
+		if(!$encoding)
+			return false;
+		return $encoding == 'UTF-8';
+	} 
+	
+	public static function stringLength($string){
+		if(extension_loaded('mbstring'))
+			return mb_strlen($string);
+		return strlen($string);
+	}
+	
+	public static function writeUTF8($string){
+		// TODO: detect utf-8 and use iconv		
+		//	return mb_convert_encoding($string, "UTF-8", "auto");
+		if(extension_loaded('mbstring')){
+			$enc = mb_detect_encoding($string, 'auto');
+			if($enc == 'UTF-8')
+				return $string;
+			return mb_convert_encoding($string, "UTF-8", $enc);
+		}
+		//if(self::isInternalUTF8())
+		//	return $string;
+		return utf8_encode($string);
+	}
+	
 }

@@ -106,6 +106,7 @@ class HessianService{
 		$payload = '';
 		ob_start(); 
 		try{
+			$instream->readAll();
 			$parser = $this->factory->getParser($instream, $this->options);
 			$parser->setTypeMap($this->typemap);
 			// cache version detection
@@ -146,8 +147,14 @@ class HessianService{
 			$payload = $this->writeFault($ex, $writer);	
 		}
 		
+		if(extension_loaded("mbstring"))
+			$size = mb_strlen($payload, 'latin1');
+		else{
+			$size = count(str_split($payload));
+		}
+				
 		header('Content-type: application/binary');
-		header('Content-length: ' . strlen($payload));
+		header('Content-length: ' . $size);
 		header('Connection: close');
 		$outstream->write($payload);			
 		$outstream->flush();

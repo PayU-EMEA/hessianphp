@@ -61,10 +61,10 @@ class HessianCURLTransport implements IHessianTransport{
 			$this->rawData = $result;
 		$this->metadata = curl_getinfo($ch);
 		curl_close($ch);
-		if(isset($this->metadata['download_content_length']))
+		/*if(isset($this->metadata['download_content_length']))
 			$stream = new HessianStream($result, $this->metadata['download_content_length']);
-		else
-			$stream = new HessianStream($result);
+		else*/
+		$stream = new HessianStream($result);
 		return $stream;
 	}
 
@@ -88,11 +88,12 @@ class HessianHttpStreamTransport implements IHessianTransport{
 	}
 	
 	function getStream($url, $data, $options){
+		$bytes = str_split($data);
 		$params = array(
 		  'http'=> array (
 		    'method'=>"POST",
 		    'header'=>"Content-Type: application/binary\r\n" .
-		              "Content-Length: ".strlen($data)."\r\n",
+		              "Content-Length: ".count($bytes)."\r\n",
 			'timeout' => 3,
 			'content' => $data
 			)

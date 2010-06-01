@@ -251,7 +251,7 @@ class Hessian2Writer{
 	}
 	
 	function writeString($value){
-		$len = strlen($value);
+		$len = HessianUtils::stringLength($value);
 		if($len < 32){
 			return pack('C', $len) 
 				. $this->writeStringData($value);
@@ -273,7 +273,7 @@ class Hessian2Writer{
 	}
 	
 	function writeSmallString($value){
-		$len = strlen($value);
+		$len = HessianUtils::stringLength($value);
 		if($len < 32){
 			return pack('C', $len) 
 				. $this->writeStringData($value);
@@ -287,7 +287,7 @@ class Hessian2Writer{
 	}
 	
 	function writeStringData($string){
-		return utf8_encode($string);
+		return HessianUtils::writeUTF8($string);
 	}
 	
 	function writeDouble($value){
@@ -329,7 +329,7 @@ class Hessian2Writer{
 		if($type == 'file' || $type == 'stream'){
 			while (!feof($handle)) {
 				$content = fread($handle, 32768);
-				$len = strlen($content);
+				$len = count(str_split($content));
 				if($len < 15){ // short binary
 					$stream .= pack('C', $len + 0x20);
 					$stream .= $content;

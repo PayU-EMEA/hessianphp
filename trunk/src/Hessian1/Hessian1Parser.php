@@ -160,6 +160,8 @@ class Hessian1Parser{
 			$string .= $this->readUTF8Bytes($len);
 			//$end = true;
 		}
+		if(HessianUtils::isInternalUTF8())
+			return $string;
 		return utf8_decode($string);
 	}
 	

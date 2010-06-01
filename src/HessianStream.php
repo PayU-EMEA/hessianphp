@@ -9,13 +9,14 @@
 
 /**
  * Represents a stream of bytes used for reading
+ * It doesn't use any of the string length functions typically used
+ * for files because if can cause problems with encodings different than latin1
  * @author vsayajin
  */
 class HessianStream{
-	public $data;
 	public $pos = 0;
-	public $last;
 	public $len;
+	public $bytes = array();
 	
 	function __construct($data = null, $length = null){
 		if($data)
@@ -23,50 +24,53 @@ class HessianStream{
 	}
 	
 	function setStream($data, $length = null){
-		$this->data = $data;
-		if (isset($length)) {
-			$this->len = $length;
-		} else {
-			$this->len = strlen($data);
-		}
+		$this->bytes = str_split($data);
+		$this->len = count($this->bytes);
 		$this->pos = 0;
-		$this->last = '';
 	}
 	
 	public function peek($count = 1, $pos = null){
 		if($pos == null)
 			$pos = $this->pos;
-		return substr($this->data, $pos, $count);
+		
+		$data = '';
+		for($i=0;$i<$count;$i++){
+			if(isset($this->bytes[$pos]))
+				$data .= $this->bytes[$pos];
+			$pos++;
+		}
+		return $data;
 	}
 
 	public function read($count=1){
 		if($count == 0)
 			return;
-		$newpos = $this->pos + $count;
-		if($newpos > $this->len)
-			throw new Exception('read past end of file: '.$newpos);
-		$this->last = $count == 1 ?
-			$this->data[$this->pos] :
-			substr($this->data, $this->pos, $count);
-		//$this->last = substr($this->data, $this->pos, $count);
-		$this->pos = $newpos;
-		return $this->last;
+		$data = '';
+		for($i=0;$i<$count;$i++){
+			if(isset($this->bytes[$this->pos]))
+				$data .= $this->bytes[$this->pos];
+			else
+				throw new Exception('read past end of file: '.$this->pos);
+			$this->pos++;
+		}
+		return $data;
 	}
 	
 	public function readAll(){
 		$this->pos = $this->len;
-		return $this->data;		
+		return implode($this->bytes);		
 	}
 
 	public function write($data){
-		$this->data .= $data;
-		$this->len += strlen($data);
+		$bytes = str_split($data);
+		$this->len += count($bytes);
+		$this->bytes = array_merge($this->bytes, $bytes);
 	}
  
 	public function flush(){}
 	
 	public function getData(){
-		return $this->data;
+		return implode($this->bytes);
 	}
 	
 	public function close(){		

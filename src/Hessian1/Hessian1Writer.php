@@ -74,8 +74,9 @@ class Hessian1Writer{
 	}
 
 	function writeStringData($value){
-		$stream = pack('n',strlen($value));
-		$stream .= utf8_encode($value);
+		$len = HessianUtils::stringLength($value);
+		$stream = pack('n', $len);
+		$stream .= HessianUtils::writeUTF8($value);
 		return $stream;
 	}
 	
@@ -212,8 +213,9 @@ class Hessian1Writer{
 				$tag = 'b';
 				if(feof($handle))
 					$tag = 'B';
-				//echo strlen($content).'<br>';
-				$stream .= $tag . pack('n',strlen($content));
+				$size = count(str_split($content));
+				//$stream .= $tag . pack('n',strlen($content));
+				$stream .= $tag . pack('n', $size);
 				$stream .= $content;
 			}
 			fclose($handle);

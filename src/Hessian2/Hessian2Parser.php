@@ -242,26 +242,24 @@ class Hessian2Parser{
 	// --- string
 	
 	function string0($code, $num){
-		$string = $this->readUTF8Bytes($num);
-		return utf8_decode($string);
+		return $this->readUTF8Bytes($num);
 	}
 	
 	function string1($code, $num){
 		$len = (($num - 0x30) << 8) + ord($this->read());
-		$string = $this->readUTF8Bytes($len);
-		return utf8_decode($string);	
+		return $this->readUTF8Bytes($len);
 	}
 	
 	function stringLongData(){
 		$tempLen = unpack('n',$this->read(2));
 		$len = $tempLen[1];
-		$string = $this->readUTF8Bytes($len);
-		return utf8_decode($string);
+		return $this->readUTF8Bytes($len);
 	}
 	
 	function stringLong($code, $num){
 		$final = true;
 		$data = '';
+		// TODO Probar con textos bien largos con caracteres utf-8 puede haber problemas
 		do{
 			$final = $num != 0x52;
 			if($num == 0x52 || $num == 0x53)
@@ -283,7 +281,7 @@ class Hessian2Parser{
 			$charCode = ord($ch);
 			if($charCode < 0x80)
 				$string .= $ch;
-			elseif(($charCode & 0xe0) == 0xc0){
+			elseif(($charCode & 0xe0) == 0xc0) {
 				$string .= $ch.$this->read(1);
 			} elseif (($charCode & 0xf0) == 0xe0) {
 				$string .= $ch.$this->read(2);
@@ -291,7 +289,9 @@ class Hessian2Parser{
 				throw new HessianParsingException("Bad utf-8 encoding at pos ".$this->stream->pos);
 			}
 		}
-		return $string;
+		if(HessianUtils::isInternalUTF8())
+			return $string;
+		return utf8_decode($string);
 	}
 	
 	//-- list

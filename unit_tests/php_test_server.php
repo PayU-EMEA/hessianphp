@@ -2,6 +2,8 @@
 
 include_once('../src/HessianService.php');
 
+//ini_set('mbstring.internal_encoding','UTF-8');
+
 class ParamObject{
 	var $test = 'Hola hessian';
 	var $stringVar = 'vaca';

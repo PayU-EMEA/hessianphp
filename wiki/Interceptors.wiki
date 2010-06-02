@@ -28,7 +28,9 @@ class Interceptor implements IHessianInterceptor{
 		// representing the RPC operation. We will log only if we are a client
 		if($ctx->isClient)
 			echo "Calling method: ".$ctx->call->method;
-
+		else {
+			$ipclient = $_SERVER['REMOTE_ADDR'];
+		}
 		// this tells the transport layer to save the original bytes
 		$ctx->options->saveRaw = true; 
 	}

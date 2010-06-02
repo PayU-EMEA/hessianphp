@@ -5,7 +5,7 @@
 
 With Interceptors, you can perform custom operations around the execution of remote communication, in both clients and services.
 
-An interceptor is an object that implements the IHessianInterceptor interface and it has 2 main methods: *beforeRequest* and *afterRequest* . These methods accept a single HessianCallingContext as a parameter. This object contains different information pertaining the current action such as the method being called, url, original configuration options and the writer and parser objects that handle the protocol at a low level.
+An interceptor is an object that implements the *IHessianInterceptor* interface and it has 2 main methods: *beforeRequest* and *afterRequest* . These methods accept a single HessianCallingContext as a parameter. This object contains different information pertaining the current action such as the method being called, url, original configuration options and the writer and parser objects that handle the protocol at a low level.
 
 Check the source code for a complete description of the properties and methods in these two classes.
 

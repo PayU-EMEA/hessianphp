@@ -25,6 +25,10 @@ class Hessian2Parser{
 		$this->customHandler = new HessianCustomTypeHandler();
 	}
 	
+	function setStream($stream){
+		$this->stream;
+	}
+	
 	function setCustomHandlers($handlers){
 		$this->customHandler->setHandlers($handlers);
 	}
@@ -275,7 +279,28 @@ class Hessian2Parser{
 	}
 	
 	function readUTF8Bytes($len){
-		$string = '';
+		$string = $this->read($len);
+		$pos = 0;
+		$pass = 1;
+		while($pass <= $len){
+			$charCode = ord($string[$pos]);
+			if($charCode < 0x80){
+				$pos++;
+			} elseif(($charCode & 0xe0) == 0xc0){
+				$pos += 2;
+				$string .= $this->read(1);
+			} elseif (($charCode & 0xf0) == 0xe0) {
+				$pos += 3;
+				$string .= $this->read(2);
+			}
+			$pass++;
+		}
+		
+		if(HessianUtils::isInternalUTF8())
+			return $string;
+		return utf8_decode($string);
+		
+		/*$string = '';
 		for($i=0;$i<$len;$i++){
 			$ch = $this->read(1);
 			$charCode = ord($ch);
@@ -291,7 +316,7 @@ class Hessian2Parser{
 		}
 		if(HessianUtils::isInternalUTF8())
 			return $string;
-		return utf8_decode($string);
+		return utf8_decode($string);*/
 	}
 	
 	//-- list

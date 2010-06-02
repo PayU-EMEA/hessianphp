@@ -169,22 +169,23 @@ class HessianUtils{
 	} 
 	
 	public static function stringLength($string){
-		if(extension_loaded('mbstring'))
-			return mb_strlen($string);
-		return strlen($string);
+		$len = strlen($string);
+		if(function_exists('mb_strlen')){
+			if(self::isInternalUTF8())
+				$len = mb_strlen($string, 'UTF-8');
+			else
+				$len = mb_strlen($string);
+		}
+		return $len;
 	}
 	
 	public static function writeUTF8($string){
 		// TODO: detect utf-8 and use iconv		
-		//	return mb_convert_encoding($string, "UTF-8", "auto");
-		if(extension_loaded('mbstring')){
-			$enc = mb_detect_encoding($string, 'auto');
-			if($enc == 'UTF-8')
-				return $string;
-			return mb_convert_encoding($string, "UTF-8", $enc);
+		if(self::isInternalUTF8()){
+			//$enc = utf8_encode($string);
+			//$enc2 = utf8_encode($enc);
+			return $string;
 		}
-		//if(self::isInternalUTF8())
-		//	return $string;
 		return utf8_encode($string);
 	}
 	

@@ -25,6 +25,7 @@ class HessianOptions{
 	public $detectVersion = false;
 	public $objectFactory;
 	public $typeMap = array();
+	public $strictTypes = false;
 	public $headers = array();
 	public $interceptors = array();
 	public $customWriters = array();

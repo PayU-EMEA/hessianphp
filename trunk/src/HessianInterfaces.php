@@ -23,6 +23,7 @@ interface IHessianDatetimeAdapter{
  */
 interface IHessianObjectFactory{
 	public function getObject($type);
+	public function setOptions(HessianOptions $options);
 }
 
 /**

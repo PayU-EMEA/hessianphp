@@ -16,13 +16,15 @@ class Hessian2Parser{
 	var $log = array();
 	var $customHandler;
 	var $objectFactory;
+	var $options;
 	
-	function __construct($resolver, $stream = null){
+	function __construct($resolver, $stream = null, $options = null){
 		$this->resolver = $resolver;
 		$this->refmap = new HessianReferenceMap();
 		$this->typemap = new HessianTypeMap();
 		$this->stream = $stream;
 		$this->customHandler = new HessianCustomTypeHandler();
+		$this->options = $options;
 	}
 	
 	function setStream($stream){

@@ -64,7 +64,7 @@ class HessianTypeMap {
 				return $local != 'array' ? $local : false; 
 			}
 		}
-		return false;
+		return $remoteType;
 	}
 	
 	public function getRemoteType($localType){
@@ -77,7 +77,8 @@ class HessianTypeMap {
 				return $remote;
 			}
 		}
-		return false;
+		//return false;
+		return $localType;
 	}
 	
 	static function ruleToRegexp($string){

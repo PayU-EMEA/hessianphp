@@ -168,7 +168,25 @@ class Hessian1Parser{
 	// Some UTF8 characters are represented with more than one byte to we need
 	// to read every character to find out if we need to read in advance.
 	function readUTF8Bytes($len){
-		$string = '';
+		$string = $this->read($len);
+		$pos = 0;
+		$pass = 1;
+		while($pass <= $len){
+			$charCode = ord($string[$pos]);
+			if($charCode < 0x80){
+				$pos++;
+			} elseif(($charCode & 0xe0) == 0xc0){
+				$pos += 2;
+				$string .= $this->read(1);
+			} elseif (($charCode & 0xf0) == 0xe0) {
+				$pos += 3;
+				$string .= $this->read(2);
+			}
+			$pass++;
+		}
+		return $string;
+		
+		/*$string = '';
 		for($i=0;$i<$len;$i++){
 			$ch = $this->read(1);
 			$charCode = ord($ch);
@@ -182,7 +200,7 @@ class Hessian1Parser{
 				throw new HessianParsingException("Bad utf-8 encoding at pos ".$this->stream->pos);
 			}
 		}
-		return $string;
+		return $string;*/
 	}
 	
 	//-- list

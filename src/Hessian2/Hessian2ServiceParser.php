@@ -29,6 +29,8 @@ class Hessian2ServiceParser extends Hessian2Parser{
 			case 'E':
 				$value = $this->parseEnvelope();
 				break;
+			default:
+				throw new HessianFault("Code $code not recognized as a top element");
 		}
 		return $value;
 	}

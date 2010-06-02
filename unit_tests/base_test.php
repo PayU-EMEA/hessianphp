@@ -69,8 +69,18 @@ abstract class BaseHessianTests extends UnitTestCase {
 	}
 
 	function testConcatStringUnicode(){
-		$str = $this->proxy->testConcatString("╚"," characters");
-		$this->assertEqual($str, "╚ characters");
+		try{
+			$expected = "áé";
+			$str = $this->proxy->testConcatString("á","é");
+			//var_dump($str);
+			//var_dump($expected);
+			$this->assertEqual($str, $expected);
+		}catch(Exception $e){
+			echo '<pre>';
+			print_r($e);
+			echo '</pre>';
+			throw $e;
+		}
 	}
 
 	function testStringToLong() { 

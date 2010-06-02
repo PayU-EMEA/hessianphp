@@ -32,13 +32,9 @@ class HessianBufferedStream{
 		
 		$newpos = $pos + $count;
 		$this->checkRead($newpos);
-		$data = '';
-		for($i=0; $i<$count; $i++){
-			if(isset($this->bytes[$pos]))
-				$data .= $this->bytes[$pos];
-			$pos++;
-		}
-		return $data;
+		
+		$portion = array_slice($this->bytes, $pos, $count);
+		return implode($portion);
 	}
 	
 	public function read($count=1){
@@ -47,19 +43,18 @@ class HessianBufferedStream{
 		$newpos = $this->pos + $count;
 		$this->checkRead($newpos);
 		
-		$data = '';
-		for($i=0;$i<$count;$i++){
-			if(isset($this->bytes[$this->pos]))
-				$data .= $this->bytes[$this->pos];
-			$this->pos++;
-		}
-		return $data;
+		$portion = array_slice($this->bytes, $this->pos, $count);
+		$read = count($portion);
+		$this->pos += $read;
+		if($read < $count)
+			throw new Exception('read past end of stream: '.$this->pos);
+		return implode($portion);
 	}
 	
 	public function checkRead($newpos){
-		return;
+		//return;
 		if(feof($this->fp) && $newpos > $this->len)
-			throw new Exception('read past end of file: '.$newpos);
+			throw new Exception('read past end of stream: '.$newpos);
 		if($newpos > $this->len){
 			while($this->len < $newpos){
 				$data = fread($this->fp, $this->bufferSize);

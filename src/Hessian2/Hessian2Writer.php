@@ -13,11 +13,13 @@ class Hessian2Writer{
 	var $typemap;
 	var $logMsg = array();
 	var $customHandler;
+	var $options;
 	
-	function __construct(){
+	function __construct($options = null){
 		$this->refmap = new HessianReferenceMap();
 		$this->typemap = new HessianTypeMap();
 		$this->customHandler = new HessianCustomTypeHandler();
+		$this->options = $options;
 	}
 		
 	function logMsg($msg){

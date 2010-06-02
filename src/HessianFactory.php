@@ -24,7 +24,19 @@ define('HESSIAN_PHP_VERSION', '2.0');
  * Default implementation of an object factory 
  */
 class HessianObjectFactory implements IHessianObjectFactory{
+	var $options;
+	public function setOptions(HessianOptions $options){
+		$this->options = $options;
+	}
+	
 	public function getObject($type){
+		if(!class_exists($type)) {
+			if(isset($this->options->strictType) && $this->options->strictType)
+				throw new Exception("Type $type cannot be found for object instantiation, check your type mappings");
+			$obj = new stdClass();
+			$obj->__type = $type;
+			return $obj;
+		}
 		return new $type();
 	}
 }
@@ -40,6 +52,11 @@ class HessianFactory{
 	var $transports = array();
 	static $cacheRules = array();
 	
+	/**
+	 * Returns a specialized HessianParser object based on the options object
+	 * @param HessianStream $stream input stream
+	 * @param HessianOptions $options configuration options
+	 */
 	function getParser($stream, $options){
 		$version = $options->version;
 		if($options->detectVersion)
@@ -49,13 +66,19 @@ class HessianFactory{
 		$inc = $config['folder'].'/'. $class .'.php';	
 		include_once $inc;
 		$resolver = $this->getRulesResolver($version, $config);
-		$parser = new $class($resolver, $stream);
+		$parser = new $class($resolver, $stream, $options);
 		$parser->dateAdapter = $this->getComponent('HessianDatetimeAdapter', $options->dateAdapter);
 		$parser->setCustomHandlers($options->customParsers);
 		$parser->objectFactory = $this->getComponent('HessianObjectFactory', $options->objectFactory);
+		$parser->objectFactory->setOptions($options);
 		return $parser;
 	}
 	
+	/**
+	 * Returns a specialized HessianWriter object based on the options object
+	 * @param HessianStream $stream output stream
+	 * @param HessianOptions $options configuration options
+	 */
 	function getWriter($stream, $options){
 		$version = $options->version;
 		if($options->detectVersion)
@@ -64,7 +87,7 @@ class HessianFactory{
 		$class = $config['writer']; 
 		$inc = $config['folder'].'/'. $class .'.php';	
 		include_once $inc;
-		$writer = new $class();
+		$writer = new $class($options);
 		$writer->dateAdapter = $this->getComponent('HessianDatetimeAdapter', $options->dateAdapter);
 		$handlers = array_merge($config['customWriters'], 
 				$options->customWriters);
@@ -80,11 +103,18 @@ class HessianFactory{
 			return $objdef;	
 		if(is_string($objdef)){
 			if(!class_exists($objdef))
-				include_once($objdef.'.php');
+				include_once($objdef.'.php'); // hacky at best
 			return new $objdef();
 		}
 	}
-		
+	
+	/**
+	 * Creates a parsing helper object (rules resolver) that uses a protocol
+	 * rule file to parse the incomin stream. It caches the rules for further
+	 * use.
+	 * @param Integer $version Protocol version
+	 * @param array $config local component configuration
+	 */
 	public function getRulesResolver($version, $config = null){
 		if(isset(self::$cacheRules[$version]))
 			return self::$cacheRules[$version];

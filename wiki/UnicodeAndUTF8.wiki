@@ -1,4 +1,4 @@
-#summary Note about multibyte character encodings (mbstring options).
+#summary working with different encodings and mbstring.
 #labels Phase-Deploy
 
 == Note about multibyte character encodings (mbstring options) ==

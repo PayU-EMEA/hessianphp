@@ -32,6 +32,8 @@ public class Person implements Serializable {
 
 The service has operation for add, delete, update and get a person's record.We are particularly interested in adding persons to the remote service and getting the generated id, which is exactly what the method add() does. Takes a Person object and returns the same object with a newly generated id.
 
+Looks like this: {{{ Person add(Person); }}}
+
 We create a Person class in PHP compatible with this object, fill some data and then send it to the add() method.
 
 {{{
@@ -57,11 +59,11 @@ print_r($result);
 
 }}}
 
-When you run this code, depending in the remote server configuration, you will get either a very nasty Fault exception or an empty stream, which is no good at all. What happened?
+When you run this code, depending in the remote server configuration, you will get either a very nasty Fault exception or an empty stream, which is not good at all. What happened?
 
-Notice the birthDate property and its type, Calendar. This is a very common way to represent dates in Java, so the service should automatically map this into either timestamps or DateTime objects right?
+Notice the birthDate property and its type, Calendar. This is a very common way to represent dates in Java, so the service should automatically map this into either timestamps or DateTime objects, right?
 
-It turns out that this particular service does not do that. Assume there is a remote method called sample() that returns a sample Person. When you call this method, with the default configuration this is what you get (using print_r() for clarity):
+It turns out that this particular service does not do that. Assume there is a remote method called sample() that returns an already filled Person object. When you call this method, with the default configuration this is what you get (using print_r() for clarity):
 
 {{{
 
@@ -86,7 +88,7 @@ stdClass Object
 )
 }}}
 
-There are a few things to notice from this output. First, none of the objects have a concrete class, just stdClass. Also, there is a property called __type that contains what seems to be a fully qualified Java class name.
+There are a few things to notice from this output. First, none of the objects have a concrete class, just stdClass. Also, there is a property called `__type` that contains what seems to be a fully qualified Java class name.
 
 Notice that the birthDate property seems to be an object of type com.caucho.io.CalendarHandle that contains a native DateTime. Apparently, the remote service doesn't know how to translate a Calendar object into a Hessian Datetime automatically, so it creates this wrapper.
 
@@ -115,7 +117,7 @@ Mapping is configured as an associative array in which the key is the name of th
 
 {{{ $options->typeMap['Person'] = '*.Person'; }}}
 
-In this line we say, match any type that ends with 'Person' to the local class. This is very useful, for example, when the remote service uses a generic types, present in both Java and C# and you want to match these types to some simple PHP class.
+In this line we say, match any type that ends with 'Person' to the local class. This is very useful, for example, when the remote service uses generic types, present in both Java and C# and you want to match these types to some simple PHP class.
 
 *NOTE:* Mapping to concrete types works both ways, meaning that the mapped remote type will be sent along with the object in the data transmision. On the other hand, wildcard mapping works one way only, the type sent to the remote service will be the local PHP type.
 
@@ -153,15 +155,15 @@ This works but it's pretty ugly and counter intuitive. In the next step we will 
 
 = Filtering objects and types =
 
-HessianPHP can apply filters both when reading from and writing to a remote service. These filters are applied only to specific primitive types or specific classes or interfaces.
+HessianPHP can apply filters both when reading from and writing to a remote service. These filters are applied only to specific primitive types or declared PHP classes or interfaces.
 
 For example, one of the primitive Hessian types is simply called 'date' and it returns a UNIX timestamp, which in PHP is a very large number. In order to turn this into a DateTime object, the library uses a default parsing filter that looks like this:
 
 {{{ $options->parseFilters['date'] = array('HessianDatetimeAdapter','toObject'); }}}
 
-Within the options objects there are two collections of filters called parseFilters and writefilters.
+Within the options objects there are two collections of filters called parseFilters and writeFilters.
 
-These collections are arrays in which the key is the name of a primitive type or a class or interface name prefixed with the character @ for distinction, like '@Person'. The value is a callback, a 'callable' variable, in the context of being able to be used with the call_user_func_array() function. This means it can be the name of a global function, an array with a class name and a public static function, an array of an object and the name of an instance method or a closure (only for PHP 5.3).
+These collections are arrays in which the key is the name of a primitive type or a class or interface name prefixed with the character @ to make them distinctive from primitive types, por example '@Person'. The value is a callback, a 'callable' variable, in the context of being able to be used with the call_user_func_array() function. This means it can be the name of a global function, an array with a class name and a public static function, an array of an object and the name of an instance method or a closure (only for PHP 5.3).
 
 The standard 'date' filter calls the toObject() static method in the HessianDatetimeAdapter class passing the value that results from parsing a date in the Hessian protocol, this is, a UNIX timestamp, creates a DateTime object and returns that instead.
 
@@ -206,9 +208,9 @@ $options->writeFilters['@Person'] = array('CalendarHandler','writePerson');
 
 The line after comment 1 means: When you read data, each time you create an object of type CalendarHandler, call the method calendarToDateTime() with the original object as a parameter and retrieve whatever this method returns to use instead.
 
-The last line (2) means: When you write data, when you find a Person object, call the method writePerson in the CalendarHandler class, retrieve the results and use them instead.
+The last line (2) means: When you write data, if you find a Person object, call the method writePerson in the CalendarHandler class, retrieve the results and use them instead.
 
-Now, with all of this, we can finally call the add method safely. Here's the entire script:
+Now, we can finally call the remote add() method safely. Here's the entire script:
 
 {{{
 

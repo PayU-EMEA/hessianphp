@@ -67,10 +67,11 @@ class HessianClient{
 		$ctx->stream = $stream;
 		$ctx->payload = $payload;
 		
+		$result = $parser->parseTop();
 		foreach($this->options->interceptors as $interceptor){
 			$interceptor->afterRequest($ctx);
 		}
-		$result = $parser->parseTop();
+		
 		return $result;
 	}
 	

@@ -11,6 +11,11 @@ include_once 'Hessian2Parser.php';
 
 class Hessian2ServiceParser extends Hessian2Parser{
 		
+	public static function detectVersion($stream){
+		$version = $stream->peek(3, 0);
+		return $version == "H\x02\x00";
+	}
+	
 	function parseTop(){
 		$this->logMsg('Parsing top element');
 		$this->parseVersion();

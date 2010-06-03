@@ -35,14 +35,6 @@ class HessianStream{
 		
 		$portion = array_slice($this->bytes, $pos, $count);
 		return implode($portion);
-		
-		/*$data = '';
-		for($i=0;$i<$count;$i++){
-			if(isset($this->bytes[$pos]))
-				$data .= $this->bytes[$pos];
-			$pos++;
-		}
-		return $data;*/
 	}
 
 	public function read($count=1){
@@ -51,19 +43,13 @@ class HessianStream{
 		$portion = array_slice($this->bytes, $this->pos, $count);
 		$read = count($portion);
 		$this->pos += $read;
-		if($read < $count)
-			throw new Exception('read past end of stream: '.$this->pos);
-		return implode($portion);
-			
-		/*$data = '';
-		for($i=0;$i<$count;$i++){
-			if(isset($this->bytes[$this->pos]))
-				$data .= $this->bytes[$this->pos];
+		if($read < $count) {
+			if($this->pos == 0)
+				throw new Exception('Empty stream received!');
 			else
-				throw new Exception('read past end of file: '.$this->pos);
-			$this->pos++;
+				throw new Exception('read past end of stream: '.$this->pos);
 		}
-		return $data;*/
+		return implode($portion);
 	}
 	
 	public function readAll(){

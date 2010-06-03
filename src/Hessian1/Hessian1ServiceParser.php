@@ -11,6 +11,14 @@ include_once 'Hessian1Parser.php';
 
 class Hessian1ServiceParser extends Hessian1Parser{
 
+	public static function detectVersion($stream){
+		$head = $stream->peek(1, 0);
+		if($head == 'f')
+			return true;
+		$head = $stream->peek(3, 0);
+		return $head == "c\x01\x00" || $head == "r\x01\x00";
+	}
+	
 	function parseTop(){
 		$code = $this->read();
 		$value = null;

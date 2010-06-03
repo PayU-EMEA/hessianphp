@@ -199,11 +199,13 @@ The following options exist for customizing internal behaviour of the library an
 
 * objectFactory		Object. Replaces the default object factory with an object that implements the 
 			IHessianObjectFactory interface. Can be used to get objects through IoC for example.
-* customWriters 	Associative array in which keys are type names and values are implementations of 
-			IHessianCustomWriter. Used to handle serialization of specific types, for instance, the 
-			IteratorWriter that serializes PHP STD iterators as lists or maps.
-* customParsers 	Same as the customWriters option, it handles the deserialization of custom types received	
-			in the response.
+* parseFilters  	Associative array in which keys are the names of basic Hessian types or classes/interfaces prefixed with @ 
+			and the keys are valid PHP callbacks to functions that process or transform the value just read from the service. 
+			Used for transforming or filtering mostly objects into a different format or even data type. 
+			Comes with a default filter 'date' to transform UNIX timestamps into native DateTime objects.
+* writeFilters 		Associative array in which keys are the names of basic PHP types or classes and the values are valid PHP callbacks 
+			to functions that will process or transform a value before is written into the output stream. Used to handle
+			serialization of specific types, for instance, the IteratorWriter? that serializes PHP STD iterators as lists or maps. 
 
 :: Note about multibyte character encodings (mbstring options)
 
@@ -232,3 +234,91 @@ If you intend to use mbstring.func_overload and internal UTF-8 encoding, here ar
 
 As of PHP 5, converting between character encodings tends to be a somewhat frustating experience so this could help 
 if you plan to change the mbstring options in your PHP installation.
+
+----------------------------------------------------------------------------
+
+:: INTERCEPTORS
+
+With Interceptors, you can perform custom operations around the execution of remote communication, in both clients and services.
+
+An interceptor is an object that implements the IHessianInterceptor interface and it has 2 main methods: beforeRequest and afterRequest . 
+These methods accept a single HessianCallingContext? as a parameter. This object contains different information pertaining the current 
+action such as the method being called, url, original configuration options and the writer and parser objects that handle the protocol
+at a low level.
+
+Check the source code for a complete description of the properties and methods in these two classes.
+
+:: CONFIGURING INTERCEPTORS
+
+Using interceptors is fairly simple.
+
+   1. Create a class that derives from IHessianInterceptor
+   2. Create an instance of the class
+   3. Add it to the interceptors array in the configuration options passed to HessianPHP clients or servers. 
+
+EXAMPLE
+
+This is a simple but useful interceptor that saves the binary streams involved in the communication and also the internal log of the parser activity.
+
+class Interceptor implements IHessianInterceptor{
+        
+        function beforeRequest(HessianCallingContext $ctx){
+                // the call property in the context is a HessianCall object
+                // representing the RPC operation. We will log only if we are a client
+                if($ctx->isClient)
+                        echo "Calling method: ".$ctx->call->method;
+
+                // this tells the transport layer to save the original bytes
+                $ctx->options->saveRaw = true; 
+        }
+        
+        function afterRequest(HessianCallingContext $ctx){
+                file_put_contents('outgoing.bin', $ctx->payload);
+                file_put_contents('parserLog.txt', implode("\r\n", $ctx->parser->log));
+                file_put_contents('writerLog.txt', implode("\r\n", $ctx->writer->log));
+                file_put_contents('incoming.bin', $ctx->transport->rawData);
+        }
+}
+
+// configuration
+$interceptor = new Interceptor();
+
+$options = new HessianOptions();
+$options->interceptors = array($interceptor); // add interceptor 
+
+$proxy = new HessianClient($url, $options);
+// or
+$server = new HessianService($testService, $options);
+
+If you have diferent interceptors, they will execute in the order they were added to the array. 
+
+-------------------------------------------------------------------------------
+
+:: MAPPING TYPES
+
+Most of the objects that are sent and received using the Hessian protocol contain a type, namely a class name attached to them. 
+In strongly typed implementations, this type is used to correctly create instances of this objects, but in dynamic languages like 
+PHP this is not mandatory.
+
+However, there are cases when you need to map some remote type to a local type, for example an object that implements ActiveRecord 
+that will get filled remotedly and then will be saved in a database.
+
+To have HessianPHP create objects of the right class, you will need to create maps that will tell the library what class to create.
+The typeMap property
+
+In the configuration of both client and servers you can define mappings of concrete remote types to local types using names or wildcards.
+The typeMap field in the configuration object is an associative array in which keys are the local type and values are remote types.
+You can use the * wildcard in either the local or remote types for easier mapping. For example 'array' => '*.IList*' will map every 
+incoming object of type IList to a PHP array
+
+Example:
+
+$options = new HessianOptions();
+$options->typeMap['Item'] = 'com.test.model.Item'; // specific remote type mapped to local 'Item' class
+$options->typeMap['Person'] = '*.Person'; // will match every class name that ends in 'Person' to the local type
+
+NOTES
+
+    * If you want to map remote types to local arrays, just write 'array' as the key.
+    * Using the default ObjectFactory component that comes with this library, when a type cannot be resolved, 
+      you will get a stdClass object with fields. 

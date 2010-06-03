@@ -266,9 +266,8 @@ The output for this will be something like this:
 
 = Conclusion =
 
-Sometimes interacting with services written from different platforms in a natural way can be challenging and even if libraries like HessianPHP provide some help, the best thing is to understand the platform and make the service and data transfer objects as simple as posible, specially when dealing with dates and times.
+Sometimes interacting with services written in different platforms in a natural way can be challenging and even if libraries like HessianPHP provide some help, the best thing is to understand the platform and make the service and data transfer objects as simple as posible, specially when dealing with dates and times.
 
 = Resources =
 
 The sample Java service is based in an example which can be found in http://www.devx.com/Java/Article/42551.
-

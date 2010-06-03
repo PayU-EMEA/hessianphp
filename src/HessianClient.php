@@ -53,13 +53,13 @@ class HessianClient{
 		$ctx->typemap = $this->typemap;
 		$ctx->call = new HessianCall($method, $arguments);
 		$ctx->url = $this->url;
-		
+		$ctx->payload = $writer->writeCall($method, $arguments);
+
 		foreach($this->options->interceptors as $interceptor){
 			$interceptor->beforeRequest($ctx);
 		}
-		
-		$payload = $writer->writeCall($method, $arguments);
-		$stream = $transport->getStream($this->url, $payload, $this->options);
+				
+		$stream = $transport->getStream($this->url, $ctx->payload, $this->options);
 		$parser = $this->factory->getParser($stream, $this->options);
 		$parser->setTypeMap($this->typemap);
 		// TODO deal with headers, packets and the rest of aditional stuff

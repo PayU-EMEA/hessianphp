@@ -117,6 +117,8 @@ Mapping is configured as an associative array in which the key is the name of th
 
 In this line we say, match any type that ends with 'Person' to the local class. This is very useful, for example, when the remote service uses a generic types, present in both Java and C# and you want to match these types to some simple PHP class.
 
+*NOTE:* Mapping to concrete types works both ways, meaning that the mapped remote type will be sent along with the object in the data transmision. On the other hand, wildcard mapping works one way only, the type sent to the remote service will be the local PHP type.
+
 Now we will create the temporary holder for the Calendar object and map it:
 
 {{{

@@ -1,4 +1,5 @@
 #summary Mapping between local and remote types.
+#labels Phase-Implementation
 
 = Mapping types =
 
@@ -15,21 +16,19 @@ In the configuration of both client and servers you can define mappings of concr
 The typeMap field in the configuration object is an associative array in which keys are the local type and values are remote types.
 
 You can use the `*` wildcard in either the local or remote types for easier mapping. 
-For example {{{ 'array' => '*.IList*' }}} will map every incoming object of type IList to a PHP array
+For example {{{ 'array' => '*.IList*' }}} will map every incoming object marked with the type IList to a PHP array
 
 Example:
 
 {{{
 $options = new HessianOptions();
-$options->typeMap = array(
-  'Item' => 'com.test.model.Item', // specific type
-  'Person' => '*.Person' // will match every class name that ends in 'Person' to the local type
-);
+$options->typeMap['Item'] = 'com.test.model.Item'; // specific remote type mapped to local 'Item' class
+$options->typeMap['Person'] = '*.Person'; // will match every class name that ends in 'Person' to the local type
 }}}
 
 *NOTES*
 
   * If you want to map remote types to local arrays, just write 'array' as the key.
-  * Using the default ObjectFactory component that comes with this library, when a type cannot be resolved, you will get a stdClass object with fields.
+  * Using the default ObjectFactory component that comes with this library, when a type cannot be resolved, you will get a stdClass object filled with properties and an extra field called __type with the unresolved type name.
 
 TODO: Test namespaces in PHP 5.3

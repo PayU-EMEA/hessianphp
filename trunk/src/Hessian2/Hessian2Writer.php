@@ -8,17 +8,15 @@
  */
 
 class Hessian2Writer{
-	var $dateAdapter;
 	var $refmap;
 	var $typemap;
 	var $logMsg = array();
-	var $customHandler;
 	var $options;
+	var $filterContainer;
 	
 	function __construct($options = null){
 		$this->refmap = new HessianReferenceMap();
 		$this->typemap = new HessianTypeMap();
-		$this->customHandler = new HessianCustomTypeHandler();
 		$this->options = $options;
 	}
 		
@@ -26,16 +24,34 @@ class Hessian2Writer{
 		$this->log[] = $msg;
 	}
 	
-	function setCustomHandlers($handlers){
-		$this->customHandler->setHandlers($handlers);
-	}
-	
 	function setTypeMap($typemap){
 		$this->typemap = $typemap;
 	}
 	
+	function setFilters($container){
+		$this->filterContainer = $container;
+	}
+	
 	function writeValue($value){
 		$type = gettype($value);
+		$dispatch = $this->resolveDispatch($type);
+		if(is_object($value)){
+			$filter = $this->filterContainer->getCallback($value);
+			if($filter) {
+				$value = $this->filterContainer->doCallback($filter, array($value, $this));
+				if($value instanceof HessianStreamResult){
+					return $value->stream;
+				}
+				$ntype = gettype($value);
+				if($type != $ntype)
+					$dispatch = $this->resolveDispatch($ntype);
+			}
+		}
+		$data = $this->$dispatch($value);
+		return $data;	
+	}
+	
+	function resolveDispatch($type){
 		$dispatch = '';
 		// TODO usar algun type helper
 		switch($type){
@@ -45,14 +61,17 @@ class Hessian2Writer{
 			case 'double': $dispatch = 'writeDouble' ; break;
 			case 'array': $dispatch = 'writeArray' ; break;
 			case 'object': $dispatch = 'writeObject' ;break;
-			case 'NULL': return 'N';
+			case 'NULL': $dispatch = 'writeNull';break;
 			case 'resource': $dispatch = 'writeResource' ; break;
 			default: 
 				throw new Exception("Handler for type $type not implemented");
 		}
 		$this->logMsg("dispatch $dispatch");
-		$data = $this->$dispatch($value);
-		return $data;	
+		return $dispatch;
+	}
+	
+	function writeNull(){
+		return 'N';
 	}
 	
 	function writeArray($array){
@@ -119,23 +138,7 @@ class Hessian2Writer{
 		return $stream;
 	}
 	
-	// TODO class type map and stuff
-	function writeObject($value){
-		if($this->dateAdapter->isDatetime($value))
-			return $this->writeDate($value);
-		
-		$refindex = $this->refmap->getReference($value);
-		if($refindex !== false){
-			return $this->writeReference($refindex);
-		}
-
-		$handler = $this->customHandler->getHandler($value);
-		if($handler)
-			return $handler->write($this, $value);
-		
-		//if($this->iteratorWriter->isIterator($value))
-		//	return $this->iteratorWriter->write($value);
-		
+	function writeObjectData($value){
 		$stream = '';
 		$class = get_class($value);
 		$index = $this->refmap->getClassIndex($class);
@@ -177,6 +180,17 @@ class Hessian2Writer{
 		
 		return $stream;
 	}
+
+	function writeObject($value){
+		//if($this->dateAdapter->isDatetime($value))
+		//	return $this->writeDate($value);
+		
+		$refindex = $this->refmap->getReference($value);
+		if($refindex !== false){
+			return $this->writeReference($refindex);
+		}
+		return $this->writeObjectData($value);
+	}
 	
 	function writeType($type){
 		$this->logMsg("writeType $type");
@@ -196,7 +210,8 @@ class Hessian2Writer{
 	}
 	
 	function writeDate($value){
-		$ts = $this->dateAdapter->toTimestamp($value);
+		//$ts = $this->dateAdapter->toTimestamp($value);
+		$ts = $value;
 		$this->logMsg("writeDate $ts");
 		$stream = '';
 		if($ts % 60 != 0){

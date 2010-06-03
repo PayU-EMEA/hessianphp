@@ -32,6 +32,11 @@ class HessianRuleResolver{
 	public $rules = array();
 	public $symbols = array();
 
+	function __construct($rulesFile){
+		if($rulesFile)
+			$this->loadRulesFromFile($rulesFile);
+	}
+	
 	/**
 	 * Takes a symbol and resolves a parsing rule to apply. Optionally it can
 	 * check if the type resolved matches an expected type 
@@ -123,5 +128,16 @@ class HessianRef{
 		if(is_array($list))
 			$this->index = count($list) - 1;
 		else $this->index = $list;
+	}
+}
+
+/**
+ * Used by custom write filters to return a stream instead of a modified object 
+ * @author vsayajin
+ */
+class HessianStreamResult {
+	var $stream;
+	function __construct($stream){
+		$this->stream = $stream;
 	}
 }

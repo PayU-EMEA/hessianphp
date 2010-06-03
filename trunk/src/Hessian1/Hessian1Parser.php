@@ -10,21 +10,19 @@
 class Hessian1Parser{
 	var $resolver;
 	var $stream;
-	var $dateAdapter;
 	var $refmap;
 	var $typemap;
 	var $log = array();
-	var $customHandler;
 	var $objectFactory;
 	var $options;
 	var $refs;
+	var $filterContainer;
 	
 	function __construct($resolver, $stream = null, $options = null){
 		$this->resolver = $resolver;
 		$this->refmap = new HessianReferenceMap();
 		$this->typemap = new HessianTypeMap();
 		$this->stream = $stream;
-		$this->customHandler = new HessianCustomTypeHandler();
 		$this->options = $options;
 	}
 	
@@ -32,12 +30,12 @@ class Hessian1Parser{
 		$this->log[] = $msg;
 	}
 	
-	function setCustomHandlers($handlers){
-		$this->customHandler->setHandlers($handlers);
-	}
-	
 	function setTypeMap($typemap){
 		$this->typemap = $typemap;
+	}
+	
+	function setFilters($container){
+		$this->filterContainer = $container;
 	}
 	
 	function read($count=1){
@@ -65,16 +63,23 @@ class Hessian1Parser{
 			$num = ord($code);
 			$this->logMsg("llamando $fun con code $code y num $num hex 0x".dechex($num). " offset ".$this->stream->pos);
 			$value = call_user_func_array(array($this, $fun), array($code, $num));
-			//$value = &$this->$fun($code, $num);
-					
 			if($value instanceof HessianIgnoreCode) {
 				$end = false;
 				$code = $this->read();
 			} else $end = true;
 		} while(!$end);
+		
+		$filter = $this->filterContainer->getCallback($rule->type);
+		if($filter)
+			$value = $this->filterContainer->doCallback($filter, array($value,$this));
+		if(is_object($value)){
+			$filter = $this->filterContainer->getCallback($value);
+			if($filter)
+				$value = $this->filterContainer->doCallback($filter, array($value, $this));
+		}
 		return $value;
 	}
-		
+	
 	function parseBinary($code, $num){
 		$end = false;
 		$data = '';
@@ -110,13 +115,7 @@ class Hessian1Parser{
 	
 	function parseDate($code, $num){
 		$ts = HessianUtils::timestampFromBytes64($this->read(8));
-		return $this->adaptTimestamp($ts);
-	}
-	
-	function adaptTimestamp($ts){
 		$this->logMsg("timestamp $ts");
-		if($this->dateAdapter instanceof IHessianDatetimeAdapter )
-			return $this->dateAdapter->toObject($ts);
 		return $ts;
 	}
 	
@@ -186,22 +185,6 @@ class Hessian1Parser{
 			$pass++;
 		}
 		return $string;
-		
-		/*$string = '';
-		for($i=0;$i<$len;$i++){
-			$ch = $this->read(1);
-			$charCode = ord($ch);
-			if($charCode < 0x80)
-				$string .= $ch;
-			elseif(($charCode & 0xe0) == 0xc0){
-				$string .= $ch.$this->read(1);
-			} elseif (($charCode & 0xf0) == 0xe0) {
-				$string .= $ch.$this->read(2);
-			} else {
-				throw new HessianParsingException("Bad utf-8 encoding at pos ".$this->stream->pos);
-			}
-		}
-		return $string;*/
 	}
 	
 	//-- list
@@ -272,7 +255,6 @@ class Hessian1Parser{
 		else
 			throw new HessianParsingException("Unresolved referenced object number $numRef");
 	}
-	
 	
 	
 }

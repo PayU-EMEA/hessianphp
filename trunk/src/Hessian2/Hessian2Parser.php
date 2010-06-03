@@ -10,33 +10,31 @@
 class Hessian2Parser{
 	var $resolver;
 	var $stream;
-	var $dateAdapter;
 	var $refmap;
 	var $typemap;
 	var $log = array();
-	var $customHandler;
 	var $objectFactory;
 	var $options;
+	var $filterContainer;
 	
 	function __construct($resolver, $stream = null, $options = null){
 		$this->resolver = $resolver;
 		$this->refmap = new HessianReferenceMap();
 		$this->typemap = new HessianTypeMap();
 		$this->stream = $stream;
-		$this->customHandler = new HessianCustomTypeHandler();
 		$this->options = $options;
 	}
 	
 	function setStream($stream){
 		$this->stream;
 	}
-	
-	function setCustomHandlers($handlers){
-		$this->customHandler->setHandlers($handlers);
-	}
-	
+
 	function setTypeMap($typemap){
 		$this->typemap = $typemap;
+	}
+	
+	function setFilters($container){
+		$this->filterContainer = $container;
 	}
 	
 	function logMsg($msg){
@@ -73,6 +71,15 @@ class Hessian2Parser{
 				$code = $this->read();
 			} else $end = true;
 		} while(!$end);
+
+		$filter = $this->filterContainer->getCallback($rule->type);
+		if($filter)
+			$value = $this->filterContainer->doCallback($filter, array($value,$this));
+		if(is_object($value)){
+			$filter = $this->filterContainer->getCallback($value);
+			if($filter)
+				$value = $this->filterContainer->doCallback($filter, array($value, $this));
+		}
 		return $value;
 	}
 	
@@ -144,7 +151,7 @@ class Hessian2Parser{
 		/*$data = unpack('N2', $this->read(8));
 		$ts = ($data[1] *256*256*256*256 ) + $data[2];
 		$ts = $ts / 1000;*/
-		return $this->adaptTimestamp($ts);
+		return $ts;
 	}
 	
 	function compactDate($code, $num){
@@ -154,13 +161,6 @@ class Hessian2Parser{
 				($data[3] << 8) +
 				$data[4];
 		$ts = $num * 60;
-		return $this->adaptTimestamp($ts);
-	}
-
-	function adaptTimestamp($ts){
-		$this->logMsg("timestamp $ts");
-		if($this->dateAdapter instanceof IHessianDatetimeAdapter )
-			return $this->dateAdapter->toObject($ts);
 		return $ts;
 	}
 	
@@ -517,7 +517,7 @@ class Hessian2Parser{
 				$item = &$this->refmap->objectlist[$item->index];
 			$obj->$prop = $item;
 		}
-		
+
 		return $obj;
 	}
 	

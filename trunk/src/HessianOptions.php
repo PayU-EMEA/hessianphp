@@ -28,9 +28,6 @@ class HessianOptions{
 	public $strictTypes = false;
 	public $headers = array();
 	public $interceptors = array();
-	public $customWriters = array();
-	public $customParsers = array();
-	public $dateAdapter;
 	public $timeZone;
 	public $saveRaw = false;
 	
@@ -38,6 +35,8 @@ class HessianOptions{
 	public $displayInfo = false;
 	public $ignoreOutput = false;	
 	
+	public $parseFilters = array();
+	public $writeFilters = array();
 	/**
 	 * Takes an array and matches the corresponding properties in this object
 	 * @param array $arr

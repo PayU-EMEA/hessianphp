@@ -12,11 +12,10 @@ include_once 'HessianExceptions.php';
 include_once 'HessianParsing.php';
 include_once 'HessianOptions.php';
 include_once 'HessianUtils.php';
-include_once 'HessianCustomTypeHandler.php';
+include_once 'HessianCallbackHandler.php';
 include_once 'HessianReferenceMap.php';
 include_once 'HessianTypeMap.php';
 include_once 'HessianStream.php';
-include_once 'HessianDatetimeAdapter.php';
 
 define('HESSIAN_PHP_VERSION', '2.0');
 
@@ -42,6 +41,24 @@ class HessianObjectFactory implements IHessianObjectFactory{
 }
 
 /**
+ * Default Datetime adapter that works with the built-in Datetime class of PHP5
+ * @author vsayajin
+ */
+class HessianDatetimeAdapter{
+	public static function toObject($ts, $parser){
+		$date = date('c', $ts);
+		//$date = gmdate('c', $ts);
+		return new Datetime($date);	
+	}
+	
+	public static function writeTime($date, $writer){
+		$ts = $date->format('U');
+		$stream = $writer->writeDate($ts);
+		return new HessianStreamResult($stream);
+	}
+} 
+
+/**
  * Handles que creation of components for assembling Hessian clients and servers
  * It contains the basic assembly configuration for these components.
  * @author vsayajin
@@ -52,6 +69,16 @@ class HessianFactory{
 	var $transports = array();
 	static $cacheRules = array();
 	
+	function __construct(){
+		$this->protocols = array(
+			'2'=>array($this,'loadVersion2'), '1'=>array($this,'loadVersion1')
+		);
+		$this->transports = array(
+			'CURL' => 'HessianCURLTransport',
+			'http' => 'HessianHttpStreamTransport'
+		);
+	}
+	
 	/**
 	 * Returns a specialized HessianParser object based on the options object
 	 * @param HessianStream $stream input stream
@@ -59,18 +86,15 @@ class HessianFactory{
 	 */
 	function getParser($stream, $options){
 		$version = $options->version;
-		if($options->detectVersion)
-			$version = $this->detectVersion($stream);
-		$config = $this->getConfig($version);
-		$class = $config['parser']; 
-		$inc = $config['folder'].'/'. $class .'.php';	
-		include_once $inc;
-		$resolver = $this->getRulesResolver($version, $config);
-		$parser = new $class($resolver, $stream, $options);
-		$parser->dateAdapter = $this->getComponent('HessianDatetimeAdapter', $options->dateAdapter);
-		$parser->setCustomHandlers($options->customParsers);
-		$parser->objectFactory = $this->getComponent('HessianObjectFactory', $options->objectFactory);
-		$parser->objectFactory->setOptions($options);
+		if($options->detectVersion && $stream)
+			$version = $this->detectVersion($stream, $options);
+		$callback = $this->getConfig($version);
+		$parser = call_user_func_array($callback, array('parser', $stream, $options));
+		if($options->objectFactory instanceof IHessianObjectFactory){
+			$parser->objectFactory = $options->objectFactory;
+		} else {
+			$parser->objectFactory = new HessianObjectFactory();
+		}
 		return $parser;
 	}
 	
@@ -81,31 +105,11 @@ class HessianFactory{
 	 */
 	function getWriter($stream, $options){
 		$version = $options->version;
-		if($options->detectVersion)
-			$version = $this->detectVersion($stream);
-		$config = $this->getConfig($version);
-		$class = $config['writer']; 
-		$inc = $config['folder'].'/'. $class .'.php';	
-		include_once $inc;
-		$writer = new $class($options);
-		$writer->dateAdapter = $this->getComponent('HessianDatetimeAdapter', $options->dateAdapter);
-		$handlers = array_merge($config['customWriters'], 
-				$options->customWriters);
-		$writer->setCustomHandlers($handlers);
+		if($options->detectVersion && $stream)
+			$version = $this->detectVersion($stream, $options);
+		$callback = $this->getConfig($version);
+		$writer = call_user_func_array($callback, array('writer', $stream, $options));
 		return $writer;
-	}
-	
-	function getComponent($default, $definition = null){
-		$objdef = $default;
-		if($definition)
-			$objdef = $definition;
-		if(is_object($objdef))
-			return $objdef;	
-		if(is_string($objdef)){
-			if(!class_exists($objdef))
-				include_once($objdef.'.php'); // hacky at best
-			return new $objdef();
-		}
 	}
 	
 	/**
@@ -115,14 +119,10 @@ class HessianFactory{
 	 * @param Integer $version Protocol version
 	 * @param array $config local component configuration
 	 */
-	public function getRulesResolver($version, $config = null){
+	public function getRulesResolver($version, $rulesPath=''){
 		if(isset(self::$cacheRules[$version]))
 			return self::$cacheRules[$version];
-		if(!$config)
-			$config = $this->getConfig(version);
-		$rulesPath = $config['folder'].'/'.$config['parsingRules'];
-		$resolver = new HessianRuleResolver();
-		$resolver->loadRulesFromFile($rulesPath);
+		$resolver = new HessianRuleResolver($rulesPath);
 		self::$cacheRules[$version] = $resolver;
 		return $resolver;
 	}
@@ -133,10 +133,9 @@ class HessianFactory{
 	 * @param HessianStream $stream
 	 * @return integer Protocol version detected
 	 */
-	function detectVersion($stream){
-		foreach($this->protocols as $version => $config){
-			$callback = $config['detectVersion'];
-			$res = $this->$callback($stream);
+	function detectVersion($stream, $options){
+		foreach($this->protocols as $version => $callback){
+			$res = call_user_func_array($callback, array('detect', $stream, $options));
 			if($res)
 				return $version;		
 		}
@@ -156,52 +155,62 @@ class HessianFactory{
 		if(!isset($this->transports[$type]))
 			throw new HessianException("The transport of type $type cannot be found");
 		$class = $this->transports[$type];
-		$trans = $this->getComponent($class);
+		$trans = new $class();
 		$trans->testAvailable();
 		return $trans; 
 	}
 	
-	function __construct(){
-		$this->protocols = array(
-			'2'=>array(
-				'folder' => 'Hessian2',
-				'parsingRules' => 'hessian2rules.php',
-				'parser' => 'Hessian2ServiceParser',
-				'writer' => 'Hessian2ServiceWriter',
-				'detectVersion' => 'detectHessian2',
-				'customWriters' => array('Iterator' => 'Hessian2IteratorWriter')
-			),	
-			'1' => array(
-				'folder' => 'Hessian1',
-				'parsingRules' => 'hessian1rules.php',
-				'parser' => 'Hessian1ServiceParser',
-				'writer' => 'Hessian1ServiceWriter',
-				'detectVersion' => 'detectHessian1',
-				'customWriters' => array('Iterator' => 'Hessian1IteratorWriter')
-			)
-			
-		);
-		$this->transports = array(
-			'CURL' => 'HessianCURLTransport',
-			'http' => 'HessianHttpStreamTransport'
-		);
+	function loadVersion2($mode, $stream, $options){
+		if($mode == 'parser'){
+			include_once 'Hessian2/Hessian2ServiceParser.php';
+			$resolver = $this->getRulesResolver(2, 'Hessian2/hessian2rules.php');
+			$parser = new Hessian2ServiceParser($resolver, $stream, $options);
+			$filters['date'] = array('HessianDatetimeAdapter','toObject');
+			$filters = array_merge($filters, $options->parseFilters);
+			$parser->setFilters(new HessianCallbackHandler($filters));
+			return $parser;
+		}
+		if($mode == 'writer'){
+			include_once 'Hessian2/Hessian2ServiceWriter.php';
+			include_once 'Hessian2/Hessian2IteratorWriter.php';
+			$writer = new Hessian2ServiceWriter($options);
+			$filters['@DateTime'] = array('HessianDatetimeAdapter','writeTime');
+			$filters['@Iterator'] = array( new Hessian2IteratorWriter(), 'write');
+			$filters = array_merge($filters, $options->writeFilters);
+			$writer->setFilters(new HessianCallbackHandler($filters));
+			return $writer;
+		}
+		if($mode == 'detect'){
+			include_once 'Hessian2/Hessian2ServiceParser.php';
+			return Hessian2ServiceParser::detectVersion($stream);
+		}
 	}
 	
-	// custom version detection functions
-	
-	function detectHessian2($stream){
-		$version = $stream->peek(3, 0);
-		return $version == "H\x02\x00";
+	function loadVersion1($mode, $stream, $options){
+		if($mode == 'parser'){
+			include_once 'Hessian1/Hessian1ServiceParser.php';
+			$resolver = $this->getRulesResolver(1, 'Hessian1/hessian1rules.php');
+			$parser = new Hessian1ServiceParser($resolver, $stream, $options);
+			$filters['date'] = array('HessianDatetimeAdapter','toObject');
+			$filters = array_merge($filters, $options->parseFilters);
+			$parser->setFilters(new HessianCallbackHandler($filters));
+			return $parser;
+		}
+		if($mode == 'writer'){
+			include_once 'Hessian1/Hessian1ServiceWriter.php';
+			include_once 'Hessian1/Hessian1IteratorWriter.php';
+			$writer = new Hessian1ServiceWriter($options);
+			$filters['@DateTime'] = array('HessianDatetimeAdapter','writeTime');
+			$filters['@Iterator'] = array( new Hessian1IteratorWriter(), 'write');
+			$filters = array_merge($filters, $options->writeFilters);
+			$writer->setFilters(new HessianCallbackHandler($filters));
+			return $writer;
+		}
+		if($mode == 'detect'){
+			include_once 'Hessian1/Hessian1ServiceParser.php';
+			return Hessian1ServiceParser::detectVersion($stream);
+		}
 	}
-	
-	function detectHessian1($stream){
-		$head = $stream->peek(1, 0);
-		if($head == 'f')
-			return true;
-		$head = $stream->peek(3, 0);
-		return $head == "c\x01\x00" || $head == "r\x01\x00";
-	}
-	
 }
 
 

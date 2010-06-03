@@ -46,7 +46,6 @@ Options that affect both client and servers.
 || *detectVersion* || Boollean, Defines if the library should try to detect protocl version based on incoming data. Default is false. ||
 || *typeMap* || Associative array defining mappings between local and remote types (classes) ||
 || *interceptors* || Array of interceptor objects that implement the IHessianInterceptor interface that will be executed in every request.||
-|| *dateAdapter* || Object. Sets an alternative object to handle date/time serialization and deserialization. The objects must implement the IHessianDatetimeAdapter interface to deal with UNIX timestamps. Can be used to replace the standard implementation that returns and serializes native DateTime objects defined in PHP 5. Defaults to a native DateTime handler. ||
 || *timeZone* || String. String defining a timezone for datetime handling, which is required in newer versions of PHP. Default detected local time zone ||
 || *saveRaw* || Boolean. Tells the transport library to keep a copy of received bytes in raw form. Usefull for debugging or logging. ||
 || *headers* || Array of headers to be included in each request. Not implemented yet. ||
@@ -81,5 +80,5 @@ The following options exist for customizing internal behaviour of the library an
 be used carefully.
 
 || *objectFactory* || Object. Replaces the default object factory with an object that implements the IHessianObjectFactory interface. Can be used to get objects through IoC for example. ||
-|| *customWriters* || Associative array in which keys are type names and values are implementations of IHessianCustomWriter. Used to handle serialization of specific types, for instance, the IteratorWriter that serializes PHP STD iterators as lists or maps. ||
-|| *customParsers* || Same as the customWriters option, it handles the deserialization of custom types received in the response. ||
+|| *parseFilters* || Associative array in which keys are the names of basic Hessian types or classes/interfaces prefixed with @ and the keys are valid PHP callbacks to functions that process or transform the value just read from the service. Used for transforming or filtering mostly objects into a different format or even data type. Comes with a default filter 'date' to transform UNIX timestamps into native DateTime objects. ||
+|| *writeFilters* || Associative array in which keys are the names of basic PHP types or classes and the values are valid PHP callbacks to functions that will process or transform a value before is written into the output stream. Used to handle serialization of specific types, for instance, the IteratorWriter that serializes PHP STD iterators as lists or maps. ||

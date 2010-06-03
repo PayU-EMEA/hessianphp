@@ -65,7 +65,6 @@ class HessianClient{
 		// TODO deal with headers, packets and the rest of aditional stuff
 		$ctx->parser = $parser;
 		$ctx->stream = $stream;
-		$ctx->payload = $payload;
 		
 		$result = $parser->parseTop();
 		foreach($this->options->interceptors as $interceptor){

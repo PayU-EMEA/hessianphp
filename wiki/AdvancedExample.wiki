@@ -32,7 +32,7 @@ public class Person implements Serializable {
 
 The service has operation for add, delete, update and get a person's record.We are particularly interested in adding persons to the remote service and getting the generated id, which is exactly what the method add() does. Takes a Person object and returns the same object with a newly generated id.
 
-Looks like this: {{{ Person add(Person); }}}
+Looks like this: {{{ Person add(Person newPerson); }}}
 
 We create a Person class in PHP compatible with this object, fill some data and then send it to the add() method.
 

@@ -37,6 +37,9 @@ class HessianOptions{
 	
 	public $parseFilters = array();
 	public $writeFilters = array();
+	
+	public $before = array();
+	public $after = array();
 	/**
 	 * Takes an array and matches the corresponding properties in this object
 	 * @param array $arr

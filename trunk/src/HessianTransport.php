@@ -53,17 +53,24 @@ class HessianCURLTransport implements IHessianTransport{
 		curl_setopt($ch, CURLOPT_HTTPHEADER, Array("Content-Type: application/binary"));
 		curl_setopt($ch, CURLOPT_POST, 1);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // ask for results to be returned
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // new, test!
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
 		$result = curl_exec($ch);
+		$error = curl_error($ch);
+		$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		if($result === false)
 			throw new Exception("curl_exec error for url $url");
+		$this->metadata = curl_getinfo($ch);
 		if(!empty($options->saveRaw))
 			$this->rawData = $result;
-		$this->metadata = curl_getinfo($ch);
 		curl_close($ch);
-		/*if(isset($this->metadata['download_content_length']))
-			$stream = new HessianStream($result, $this->metadata['download_content_length']);
-		else*/
+		if($error){
+			throw new Exception("CURL transport error: $error");
+		}
+		if($code != 200){
+			throw new Exception("Server error, returned HTTP code: $code");
+		}
+		
 		$stream = new HessianStream($result);
 		return $stream;
 	}

@@ -56,21 +56,24 @@ class HessianCURLTransport implements IHessianTransport{
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // new, test!
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
 		$result = curl_exec($ch);
+		$this->metadata = curl_getinfo($ch);
 		$error = curl_error($ch);
 		$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-		if($result === false)
+		if($error){
+			curl_close($ch);
+			throw new Exception("CURL transport error: $error");
+		}
+		if($result === false) {
+			curl_close($ch);
 			throw new Exception("curl_exec error for url $url");
-		$this->metadata = curl_getinfo($ch);
+		}
 		if(!empty($options->saveRaw))
 			$this->rawData = $result;
 		curl_close($ch);
-		if($error){
-			throw new Exception("CURL transport error: $error");
-		}
 		if($code != 200){
+			curl_close($ch);
 			throw new Exception("Server error, returned HTTP code: $code");
 		}
-		
 		$stream = new HessianStream($result);
 		return $stream;
 	}
@@ -118,10 +121,12 @@ class HessianHttpStreamTransport implements IHessianTransport{
 		$ctx = stream_context_create($params);
 		$fp = fopen($url, 'rb', false, $ctx);
 		if (!$fp) {
-			throw new Exception("Problem with $url, $php_errormsg");
+			throw new Exception("Http problem with $url, $php_errormsg");
 		}
 		$response = @stream_get_contents($fp);
 		if ($response === false) {
+			if($fp) 
+				fclose($fp);
 			throw new Exception("Problem reading data from $url, $php_errormsg");
 		} 
 		$this->metadata = stream_get_meta_data($fp);

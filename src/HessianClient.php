@@ -46,6 +46,8 @@ class HessianClient{
 		$writer = $this->factory->getWriter(null, $this->options);
 		$writer->setTypeMap($this->typemap);
 
+			
+		
 		$ctx = new HessianCallingContext();
 		$ctx->writer = $writer;
 		$ctx->transport = $transport;
@@ -54,11 +56,13 @@ class HessianClient{
 		$ctx->call = new HessianCall($method, $arguments);
 		$ctx->url = $this->url;
 		$ctx->payload = $writer->writeCall($method, $arguments);
-
+		$args = array($ctx);
+		
 		foreach($this->options->interceptors as $interceptor){
 			$interceptor->beforeRequest($ctx);
 		}
-				
+		$this->__handleCallbacks($this->options->before, $args);
+		
 		$stream = $transport->getStream($this->url, $ctx->payload, $this->options);
 		$parser = $this->factory->getParser($stream, $this->options);
 		$parser->setTypeMap($this->typemap);
@@ -66,12 +70,34 @@ class HessianClient{
 		$ctx->parser = $parser;
 		$ctx->stream = $stream;
 		
-		$result = $parser->parseTop();
+		try{
+			$result = $parser->parseTop();
+		} catch(Exception $e){
+			$ctx->error = $e;
+		}
 		foreach($this->options->interceptors as $interceptor){
 			$interceptor->afterRequest($ctx);
 		}
+		$this->__handleCallbacks($this->options->after, $args);
 		
+		if($ctx->error instanceof Exception)
+			throw $ctx->error;
 		return $result;
+	}
+	
+	private function __handleCallbacks($callbacks, $arguments){
+		if(!$callbacks)
+			return;
+		if(is_callable($callbacks)){
+			return call_user_func_array($callbacks, $arguments);
+		}
+		if(!is_array($callbacks))
+			return;
+		foreach($callbacks as $call){
+			if(is_callable($call)){
+				return call_user_func_array($call, $arguments);
+			}
+		}
 	}
 	
 	/**

@@ -34,6 +34,7 @@ class HessianCallingContext{
 	public $call;
 	public $url;
 	public $payload;
+	public $error;
 }
 
 /**

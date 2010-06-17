@@ -31,3 +31,5 @@ class HessianFault extends Exception{
 		$this->detail = $detail;
 	}
 }
+
+class HessianException extends Exception{}

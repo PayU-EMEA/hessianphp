@@ -75,6 +75,7 @@ class HessianFactory{
 		);
 		$this->transports = array(
 			'CURL' => 'HessianCURLTransport',
+			'curl' => 'HessianCURLTransport',
 			'http' => 'HessianHttpStreamTransport'
 		);
 	}

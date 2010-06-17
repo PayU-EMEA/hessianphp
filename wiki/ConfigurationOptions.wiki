@@ -37,6 +37,15 @@ $service = new HessianService($wrappedObject,
 );
 }}}
 
+This example tells HessianPHP to use BASIC Authentication for a client proxy, using the conventions defined for the CURL library in PHP (the default transport):
+
+{{{
+$options = array(
+  'transportOptions' => array( CURLOPT_USERPWD => 'user:password' )
+);
+$proxy = new HessianClient($url, $options);
+}}}
+
 == General configuration properties ==
 
 Options that affect both client and servers.
@@ -67,6 +76,12 @@ library or method. Transport specific options to configure the request. In the c
   * http: array to be merged with the options used in the stream_context_create() function.
 
 Please consult the PHP Manual for more information about specific options for these libraries.
+
+Options for the CURL transport can be found here: 
+http://www.php.net/manual/en/function.curl-setopt.php
+
+The options for the 'http' transport can be found here: 
+http://www.php.net/manual/en/context.http.php
 
 ==Server options==
 

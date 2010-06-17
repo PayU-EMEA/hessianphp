@@ -45,9 +45,11 @@ class HessianOptions{
 	 * @param array $arr
 	 */
 	public function fromArray(array $arr){
+		$vars = get_class_vars('HessianOptions');
 		foreach($arr as $key=>$value){
-			if(isset($this->$key))
+			if(array_key_exists($key, $vars)){
 				$this->$key = $value;
+			}
 		}
 	}
 	
@@ -63,9 +65,9 @@ class HessianOptions{
 			return $options;
 		if($object instanceof HessianOptions)
 			return $object;
-		else if(is_array($object))
+		elseif(is_array($object))
 			$options->fromArray($object);
-		else if(is_object($object)){
+		elseif(is_object($object)){
 			$arr = (array)$object;
 			$options->fromArray($arr);
 		}

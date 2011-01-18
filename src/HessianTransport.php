@@ -174,7 +174,9 @@ class HessianHttpStreamTransport implements IHessianTransport{
 		$this->metadata = stream_get_meta_data($fp);
 		$this->metadata['http_headers'] = array();
 		foreach ($this->metadata['wrapper_data'] as $raw_header) {
-			list($header, $data) = explode(':', $raw_header);
+			$parts = explode(':', $raw_header);
+			$header = $parts[0];
+			$data = count($parts) > 1 ? $parts[1] : '';
 			$this->metadata['http_headers'][strtolower($header)] = trim($data);
 		}
 		fclose($fp);

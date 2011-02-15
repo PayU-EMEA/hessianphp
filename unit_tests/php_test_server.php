@@ -10,6 +10,10 @@ class ParamObject{
 
 class HessianTest{
 
+	function testEcho($value){
+		return $value;
+	}
+
 	function testStringToBoolean($param){
 		return (bool)$param;
 	}

@@ -48,6 +48,10 @@ class Interceptor implements IHessianInterceptor{
 	}
 }
 
+/**
+* Base class for unit tests of the protocol features. It uses a local php service
+to perform the remote calls.
+*/
 abstract class BaseHessianTests extends UnitTestCase {
 	var $version = 2;
 	var $proxy;
@@ -63,11 +67,24 @@ abstract class BaseHessianTests extends UnitTestCase {
     
     function tearDown() {}
 
+	// Tests if sent and received values are equal
+	function testEcho(){
+		$values = array(
+			555.00, 666.00, 102456.5646, 'Hello', 'Ámbito', 546546, false, true
+		);
+		foreach($values as $value){
+			$ret = $this->proxy->testEcho($value);
+			$this->assertEqual($ret, $value);	
+		}
+	}
+
+	// tests simple strings
 	function testConcatString(){
 		$str = $this->proxy->testConcatString("hello"," hessianphp");
 		$this->assertEqual($str, "hello hessianphp");
 	}
 
+	// tests unicode strings
 	function testConcatStringUnicode(){
 		try{
 			$expected = "áé";

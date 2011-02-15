@@ -316,7 +316,8 @@ class Hessian2Writer{
 			return pack('c', 0x5c);
 		}
 		
-		if($frac == 0 && $this->between($value, -127, 2047)){
+		// Issue 10, Fix thanks to nesnnaho...@googlemail.com, 
+		if($frac == 0 && $this->between($value, -127, 128)){
 			return pack('c', 0x5d) . pack('c', $value);
 		}
 		if($frac == 0 && $this->between($value, -32768, 32767)){

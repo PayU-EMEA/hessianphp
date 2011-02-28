@@ -172,7 +172,8 @@ class Hessian2Parser{
 		if($num == 0x5c)
 			return (float)1.0;
 		$bytes = $this->read(1);
-		return (float)ord($bytes);
+		$valor = unpack('c', $bytes);
+		return (float)$valor[1]; //(float)ord($bytes);
 	}
 	
 	function double2($code, $num){

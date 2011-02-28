@@ -67,10 +67,27 @@ abstract class BaseHessianTests extends UnitTestCase {
     
     function tearDown() {}
 
+	function testEchoToDouble() {
+		$testArray = array(
+			0.0, 1.0,
+			126.0, 127.0, 128.0, 129.0, -130.0, 
+			-128.0, -127.0,
+			-32768.0, 32766.0,
+			-9879.6546545,
+			-32767.0, 32767.0, 32768.0,
+			-99999999.0, -99999999.123, 99999999.0, 99999999.123,
+		);
+		foreach($testArray as $testValue){
+			$double = $this->proxy->testEcho($testValue);
+			$this->assertEqual($testValue, $double);
+		}
+	}
+
 	// Tests if sent and received values are equal
 	function testEcho(){
 		$values = array(
-			555.00, 666.00, 102456.5646, 'Hello', 'Ámbito', 546546, false, true
+			555.00, 666.00, 102456.5646, 'Hello', 'Ámbito', 546546, false, true, 980440.064, 5124567855432488,
+			new DateTime('2005-12-27 08:39:48')
 		);
 		foreach($values as $value){
 			$ret = $this->proxy->testEcho($value);
@@ -328,5 +345,6 @@ abstract class BaseHessianTests extends UnitTestCase {
 		$totalbytes = count(str_split($bytes));
 		$this->assertTrue($totalbytes == $size); //strlen($bytes)
 	}
+
 }
 

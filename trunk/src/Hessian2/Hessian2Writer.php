@@ -307,20 +307,19 @@ class Hessian2Writer{
 		return HessianUtils::writeUTF8($string);
 	}
 	
-	function writeDouble($value){
+	function writeDouble($value) {
 		$frac = abs($value) - floor(abs($value));
-		if($value == 0.0){
+		if($value == 0)
 			return pack('c', 0x5b);
-		}
-		if($value == 1.0){
+		if($value == 1)
 			return pack('c', 0x5c);
-		}
-		
+
+		$intValue = intval($value);
 		// Issue 10, Fix thanks to nesnnaho...@googlemail.com, 
-		if($frac == 0 && $this->between($value, -127, 128)){
+		if($frac == 0 && (-128.0 <= $value && $value < 127)) {
 			return pack('c', 0x5d) . pack('c', $value);
 		}
-		if($frac == 0 && $this->between($value, -32768, 32767)){
+		if($frac == 0 && (-32768.0 <= $value && $value < 32767.0)) {
 			$stream = pack('c', 0x5e);
 			$stream .= HessianUtils::floatBytes($value);
 			return $stream;

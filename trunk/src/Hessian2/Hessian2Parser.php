@@ -1,7 +1,7 @@
 <?php
 /*
  * This file is part of the HessianPHP package.
- * (c) 2004-2010 Manuel Gómez
+ * (c) 2004-2011 Manuel Gómez
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -517,6 +517,7 @@ class Hessian2Parser{
 			if(HessianRef::isRef($item)) 
 				$item = &$this->refmap->objectlist[$item->index];
 			$obj->$prop = $item;
+			unset($item); // reported as fix to issue 15, test are successful. Thanx ruben.wa...
 		}
 
 		return $obj;

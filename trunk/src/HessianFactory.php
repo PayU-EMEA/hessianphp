@@ -17,7 +17,7 @@ include_once 'HessianReferenceMap.php';
 include_once 'HessianTypeMap.php';
 include_once 'HessianStream.php';
 
-define('HESSIAN_PHP_VERSION', '2.0.3');
+define('HESSIAN_PHP_VERSION', '2.0.4');
 
 /**
  * Default implementation of an object factory 

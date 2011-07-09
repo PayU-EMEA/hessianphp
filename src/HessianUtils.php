@@ -39,6 +39,12 @@ class HessianUtils{
 	const pow32 = 4294967296;
 
 	/**
+	 * 32 bit max int. Used instead of PHP_INT_MAX to ensure compatibility in 64 bit environments. 
+	 * @var int
+	 */
+	const PHP_INT_MAX_32 = 2147483647;
+	
+	/**
 	 * Determines if an array is a 'list' by comparing the original keys and the
 	 * keys from a surrogate array that is indeed a list (array_values)
 	 * @param array $arr 
@@ -128,8 +134,8 @@ class HessianUtils{
 		$res = $b2[1];
 		$num = ($b1[1] * self::pow32);
 		if($res < 0){ // overflow
-			$comp = PHP_INT_MAX + $res;
-			$num += PHP_INT_MAX + $comp;
+			$comp = self::PHP_INT_MAX_32 + $res;
+			$num += self::PHP_INT_MAX_32 + $comp;
 		} else {
 			$num += $res; 
 		}
@@ -150,8 +156,8 @@ class HessianUtils{
 		$res = $b2[1];
 		$num = ($b1[1] * self::pow32);
 		if($res < 0){ // overflow
-			$comp = PHP_INT_MAX + $res;
-			$num += PHP_INT_MAX + $comp + 1000;
+			$comp = self::PHP_INT_MAX_32 + $res;
+			$num += self::PHP_INT_MAX_32 + $comp + 1000;
 		} else {
 			$num += $res; 
 		}

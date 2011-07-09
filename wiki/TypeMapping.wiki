@@ -26,6 +26,15 @@ $options->typeMap['Item'] = 'com.test.model.Item'; // specific remote type mappe
 $options->typeMap['Person'] = '*.Person'; // will match every class name that ends in 'Person' to the local type
 }}}
 
+Alternatively, you can use a shorter array version:
+
+{{{
+$options->typeMap = array(
+ 'DTO1' => 'com.test.DTO1',
+ 'Reference' => 'com.test.Reference',
+);
+}}}
+
 *NOTES*
 
   * If you want to map remote types to local arrays, just write 'array' as the key.
